@@ -43,7 +43,7 @@ class MainQWidget(QtWidgets.QWidget):
         self.tabwidget.addTab(self.tab0, "C-Suppression")
 
         self.tab1 = QtWidgets.QWidget()
-        self.tabwidget.addTab(self.tab1, "Tab whatever")
+        self.tabwidget.addTab(self.tab1, "Measure")
 
         # /Tab0 \
         self.t0_vbox0 = QtWidgets.QVBoxLayout() #Items organised vertically
@@ -86,19 +86,25 @@ class MainQWidget(QtWidgets.QWidget):
         self.labelSliceDims = QtWidgets.QLabel("")
         self.t0_grid0.addWidget(self.labelSliceDims, 3,1)
 
-        #TODO make this a checkbox followed by a box with controls for this filter
-        self.label0 = QtWidgets.QLabel("Directional band-pass FFT filter")
-        self.t0_vbox0.addWidget( self.label0)
+        # Radiobutton followed by a box with controls for this filter
+        self.rbDirFFT = QtWidgets.QRadioButton("Directional band-pass FFT filter")
+        self.rbDirFFT.setChecked(True)
+        self.t0_vbox0.addWidget( self.rbDirFFT)
+        #TODO, may need 'connection'
+
+        self.grpBox1 = QtWidgets.QGroupBox("") #Box, no title, radiobutton does it
+        self.t0_vbox0.addWidget(self.grpBox1)
+        self.vbox2 = QtWidgets.QVBoxLayout()
+        self.grpBox1.setLayout(self.vbox2)
 
         self.label1 = QtWidgets.QLabel("Select cutoff frequencies")
-        self.t0_vbox0.addWidget(self.label1)
+        self.vbox2.addWidget(self.label1)
 
         self.t0_hbox = QtWidgets.QHBoxLayout() #Horizontal layout to set low and high freq of filters
-        self.t0_vbox0.addLayout( self.t0_hbox)
+        self.vbox2.addLayout( self.t0_hbox)
         
         self.label_low = QtWidgets.QLabel("low:")
         self.t0_hbox.addWidget(self.label_low)
-
         self.freqselector_low = QtWidgets.QSpinBox()
         self.freqselector_low.setMinimum(0)
         self.freqselector_low.setMaximum(100)
@@ -109,24 +115,13 @@ class MainQWidget(QtWidgets.QWidget):
 
         self.label_high = QtWidgets.QLabel("high:")
         self.t0_hbox.addWidget(self.label_high)
-
         self.freqselector_high = QtWidgets.QSpinBox()
         self.freqselector_high.setMinimum(0)
         self.freqselector_high.setMaximum(100)
         self.freqselector_high.setValue(5)
         self.freqselector_high.setSingleStep(1)
-        print(f"self.freqselector_high.stepType: {self.freqselector_high.stepType()}")
-        #self.freqselector_high.setStepType(QtWidgets.QAbstractSpinBox.)
         self.t0_hbox.addWidget(self.freqselector_high)
         self.freqselector_high.valueChanged.connect(self.freqselector_high_valueChanged)
-
-        # self.layout().addWidget(self.label1)
-        # self.layout().addWidget(self.freqselector)
-
-        # self.freqRangeSlider = QRangeSlider(Qt.Horizontal)
-        # self.freqRangeSlider.setRange(0,100)
-        # self.freqRangeSlider.setValue((0,5))
-        # self.t0_vbox0.addWidget(self.freqRangeSlider)
 
         self.chkPreview = QtWidgets.QCheckBox("Preview")
         self.chkPreview.setChecked(True)
@@ -137,6 +132,37 @@ class MainQWidget(QtWidgets.QWidget):
         self.btnApply = QtWidgets.QPushButton("Apply")
         self.t0_vbox0.addWidget(self.btnApply)
         self.btnApply.clicked.connect(self.btnApply_on_click) #Signal
+
+
+        # /Tab1 \
+        self.vBox3 = QtWidgets.QVBoxLayout() #Items organised vertically
+        self.tab1.setLayout(self.vBox3 )
+
+        #Add stuff
+        self.grpBox2 = QtWidgets.QGroupBox("Measure charging")
+        self.vBox3.addWidget(self.grpBox2)
+        self.grpBox2_vlayout = QtWidgets.QVBoxLayout()
+        self.grpBox2.setLayout(self.grpBox2_vlayout)
+
+        self.lbl7 = QtWidgets.QLabel("Please ensure correct data source in layer list is selected before calculation")
+        self.lbl7.setWordWrap(True)
+        self.grpBox2_vlayout.addWidget(self.lbl7)
+
+        self.hBox2 = QtWidgets.QHBoxLayout()
+        self.grpBox2_vlayout.addLayout( self.hBox2)
+        self.lblMCTileSize = QtWidgets.QLabel("Tile Size")
+        self.hBox2.addWidget(self.lblMCTileSize)
+        self.mc_tilesize_selector = QtWidgets.QSpinBox()
+        self.mc_tilesize_selector.setMinimum(8)
+        self.mc_tilesize_selector.setMaximum(2048)
+        self.mc_tilesize_selector.setValue(256)
+        self.hBox2.addWidget(self.mc_tilesize_selector)
+
+        self.btnMCCalculate = QtWidgets.QPushButton("Calculate")
+        self.grpBox2_vlayout.addWidget(self.btnMCCalculate)
+        self.btnMCCalculate.clicked.connect(self.btnMCCalculate_onclick) #Signal
+
+
 
 
     def freqselector_high_valueChanged(self):
@@ -241,3 +267,36 @@ class MainQWidget(QtWidgets.QWidget):
                 return
         else:
             print("No active layer to select data source.")
+    
+    def btnMCCalculate_onclick(self):
+        #Run the measure charging
+
+        #Read tile size parameter and gets current image
+        tilesize = self.mc_tilesize_selector.value()
+
+        active0 = self.viewer.layers.selection.active
+        data0= active0.data
+
+        curDataSlice=None
+        if data0.ndim==2:
+            curDataSlice=data0
+        elif data0.ndim==3:
+            dims0 = self.viewer.dims
+            nslice = dims0.current_step[0] #Gets the slice number that is currently being viewed, 1st index is the slice number, but which axis is not given here
+            orderdict = { 0:'z' , 1:'y' , 2:'x'}
+            order0 = dims0.order[0]
+            print(f"nslice: {str(nslice)} ; order: {orderdict[order0]}")
+
+            if order0 == 0: #z
+                curDataSlice = data0[nslice,...]
+            elif order0 == 1: #y
+                curDataSlice = data0[:,nslice,:]
+            else: #x
+                curDataSlice = data0[...,nslice]
+        
+        if not curDataSlice is None:
+            #Calculate
+            overlay = measure_charging.generate_heatmap(curDataSlice, tilesize)
+            self.viewer.add_image(overlay, name="Charging artefacts", opacity=0.3, colormap="viridis")
+
+
