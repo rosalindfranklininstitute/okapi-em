@@ -1,10 +1,12 @@
 # okapi-em
 
-[![License](https://img.shields.io/pypi/l/okapi-em.svg?color=green)](https://github.com/perdigao1/okapi-em/raw/main/LICENSE)
+# https://github.com/rosalindfranklininstitute/okapi-em
+
+[![License](https://img.shields.io/pypi/l/okapi-em.svg?color=green)](https://github.com/rosalindfranklininstitute/okapi-em/raw/main/LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/okapi-em.svg?color=green)](https://pypi.org/project/okapi-em)
 [![Python Version](https://img.shields.io/pypi/pyversions/okapi-em.svg?color=green)](https://python.org)
-[![tests](https://github.com/perdigao1/okapi-em/workflows/tests/badge.svg)](https://github.com/perdigao1/okapi-em/actions)
-[![codecov](https://codecov.io/gh/perdigao1/okapi-em/branch/main/graph/badge.svg)](https://codecov.io/gh/perdigao1/okapi-em)
+[![tests](https://github.com/perdigao1/okapi-em/workflows/tests/badge.svg)](https://github.com/rosalindfranklininstitute/okapi-em/actions)
+[![codecov](https://codecov.io/gh/perdigao1/okapi-em/branch/main/graph/badge.svg)](https://codecov.io/gh/rosalindfranklininstitute/okapi-em)
 [![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/okapi-em)](https://napari-hub.org/plugins/okapi-em)
 
 napari plugin to deal with charging artifacts in tomography electron microscopy data
@@ -27,7 +29,9 @@ You can install `okapi-em` via [pip]:
 
     pip install okapi-em
 
+For development mode it can be installed by navigating to the cloned `okapi-em` folder and run:
 
+    pip install -e .
 
 
 ## Contributing
