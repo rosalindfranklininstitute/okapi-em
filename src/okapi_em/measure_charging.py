@@ -1,6 +1,6 @@
 import math
 
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import napari
 import numpy as np
 from skimage import io
@@ -173,19 +173,19 @@ def generate_heatmap(img, tile_size, horizontal=True):
     return overlay    
 
 
-if __name__ == "__main__":
-    input_image = "2022-02-22_20_12_44_1_18_mode_0.tif"
-    img = open_image(input_image)
-    tiles, (nTilesX, nTilesY) = extract_tiles(img, 512)
-    overlay = generate_heatmap(img, 256)
+# if __name__ == "__main__":
+#     input_image = "2022-02-22_20_12_44_1_18_mode_0.tif"
+#     img = open_image(input_image)
+#     tiles, (nTilesX, nTilesY) = extract_tiles(img, 512)
+#     overlay = generate_heatmap(img, 256)
 
-    # plt.imshow(img2, cmap="Greys_r")
-    # plt.imshow(overlay, cmap="viridis", alpha=0.3)
-    # plt.colorbar()
-    # plt.show()
+#     # plt.imshow(img2, cmap="Greys_r")
+#     # plt.imshow(overlay, cmap="viridis", alpha=0.3)
+#     # plt.colorbar()
+#     # plt.show()
 
-    nv = napari.Viewer()
-    nv.add_image(img, name="Original image")
-    nv.add_image(overlay, name="Charging artefacts", opacity=0.3, colormap="viridis")
-    napari.run()
-    print("Done")
+#     nv = napari.Viewer()
+#     nv.add_image(img, name="Original image")
+#     nv.add_image(overlay, name="Charging artefacts", opacity=0.3, colormap="viridis")
+#     napari.run()
+#     print("Done")

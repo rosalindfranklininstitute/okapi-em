@@ -190,21 +190,23 @@ class MainQWidget(QtWidgets.QWidget):
             
             if not self.curDataSlice is None:
                 #Debug
-                print(f"curData.shape = {self.curData.shape}")
+                #print(f"curData.shape = {self.curData.shape}")
                 self.labelSliceDims.setText(str(self.curDataSlice.shape))
 
                 freq_low = self.freqselector_low.value()
                 freq_high = self.freqselector_high.value()
 
-                print(f"freq_low : {freq_low} , freq_high: {freq_high}")
+                #print(f"freq_low : {freq_low} , freq_high: {freq_high}")
 
                 #Calculate the filtered data
                 dataPreview = filters.fft_bandpass_filter_dirx_2D(self.curDataSlice,freq_low, freq_high)
 
                 if self.myImageLayer is None or not self.myImageLayer in self.viewer.layers:
-                    self.myImageLayer = self.viewer.add_image(dataPreview, name="preview")
-                    self.myImageLayer._keep_auto_contrast=True #This helps show image with auto contrast however associated button does not show it is pressed
+                    #self.myImageLayer = self.viewer.add_image(dataPreview, name="preview")
+                    #self.myImageLayer._keep_auto_contrast=True #This helps show image with auto contrast however associated button does not show it is pressed
                     #self.myImageLayer.reset_contrast_limits() #Try, doesnt work
+                    self.myImageLayer = self.viewer.add_image(dataPreview, name="preview", contrast_limits= (self.curDataSlice.min(), self.curDataSlice.max()))
+
                 else:
                     #Dont create a new layer, just modify it
                     self.myImageLayer.data = dataPreview 
