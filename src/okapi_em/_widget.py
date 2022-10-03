@@ -9,9 +9,9 @@ Replace code below according to your needs.
 #from qtpy.QtWidgets import QWidget, QHBoxLayout, QPushButton, QSlider, QSpinBox, QVBoxLayout, QLabel
 #from qtpy import QWidgets
 #from qtpy.QtWidgets import *
-from turtle import update
+#from turtle import update
 from qtpy import QtWidgets
-from qtpy.QtCore import Qt
+#from qtpy.QtCore import Qt
 #from napari._qt.widgets.qt_range_slider import QHRangeSlider
 #from superqt import QRangeSlider
 
@@ -34,26 +34,16 @@ class MainQWidget(QtWidgets.QWidget):
         #layout = QVBoxLayout()
         self.setLayout(QtWidgets.QVBoxLayout())
 
-        #Put a tab widget that will help select operations
-        self.tabwidget = QtWidgets.QTabWidget()
-        self.layout().addWidget(self.tabwidget)
+        #self.t0_vbox0 = QtWidgets.QVBoxLayout() #Items organised vertically
+        # self.tabChargeSuppr.addWidget( self.t0_vbox0 )
+        #self.tabChargeSuppr.setLayout(self.t0_vbox0 )
+        #self.layout().addWidget(self.t0_vbox0)
 
-        #Create 2 tabs
-        self.tab0 = QtWidgets.QWidget()
-        self.tabwidget.addTab(self.tab0, "C-Suppression")
-
-        self.tab1 = QtWidgets.QWidget()
-        self.tabwidget.addTab(self.tab1, "Measure")
-
-        # /Tab0 \
-        self.t0_vbox0 = QtWidgets.QVBoxLayout() #Items organised vertically
-        # self.tab0.addWidget( self.t0_vbox0 )
-        self.tab0.setLayout(self.t0_vbox0 )
-
-        # Data source --|
+        # Data source Box |---|
         #Group here the controls to select data/slice
         self.group_box0 = QtWidgets.QGroupBox("Data source")
-        self.t0_vbox0.addWidget(self.group_box0)
+        #self.t0_vbox0.addWidget(self.group_box0)
+        self.layout().addWidget(self.group_box0)
 
         self.group_box0_vbox0 = QtWidgets.QVBoxLayout()
         self.group_box0.setLayout(self.group_box0_vbox0)
@@ -85,24 +75,41 @@ class MainQWidget(QtWidgets.QWidget):
         self.t0_grid0.addWidget(self.label6, 3,0)
         self.labelSliceDims = QtWidgets.QLabel("")
         self.t0_grid0.addWidget(self.labelSliceDims, 3,1)
+        # Data Source Box |___| end
 
+        #Put a tab widget that will help select operations
+        self.tabwidget = QtWidgets.QTabWidget()
+        self.layout().addWidget(self.tabwidget)
+        # and set its layout as vertical
+        #self.t0_vbox0.addWidget(self.tabwidget)
+
+        #Create tabs
+        
+        # /tabChargeSuppr \
+        self.tabChargeSuppr = QtWidgets.QWidget()
+        self.tabwidget.addTab(self.tabChargeSuppr, "C-Suppression")
+        # Tab with charge suppression filters
+        # Contains FFT directional filter plus others
+
+        self.t0_vbox0 = QtWidgets.QVBoxLayout() #Items organised vertically
+        self.tabwidget.setLayout(self.t0_vbox0)
+
+        # Filter: Directional band-pass
         # Radiobutton followed by a box with controls for this filter
         self.rbDirFFT = QtWidgets.QRadioButton("Directional band-pass FFT filter")
         self.rbDirFFT.setChecked(True)
         self.t0_vbox0.addWidget( self.rbDirFFT)
         #TODO, may need 'connection'
-
+        #Options for this filter are contained in the next box grpBox1
         self.grpBox1 = QtWidgets.QGroupBox("") #Box, no title, radiobutton does it
+        #self.tabChargeSuppr.addWidget(self.grpBox1)
         self.t0_vbox0.addWidget(self.grpBox1)
         self.vbox2 = QtWidgets.QVBoxLayout()
         self.grpBox1.setLayout(self.vbox2)
-
         self.label1 = QtWidgets.QLabel("Select cutoff frequencies")
         self.vbox2.addWidget(self.label1)
-
         self.t0_hbox = QtWidgets.QHBoxLayout() #Horizontal layout to set low and high freq of filters
         self.vbox2.addLayout( self.t0_hbox)
-        
         self.label_low = QtWidgets.QLabel("low:")
         self.t0_hbox.addWidget(self.label_low)
         self.freqselector_low = QtWidgets.QSpinBox()
@@ -112,7 +119,6 @@ class MainQWidget(QtWidgets.QWidget):
         self.freqselector_low.setSingleStep(1)
         self.t0_hbox.addWidget(self.freqselector_low)
         self.freqselector_low.valueChanged.connect(self.freqselector_low_valueChanged)
-
         self.label_high = QtWidgets.QLabel("high:")
         self.t0_hbox.addWidget(self.label_high)
         self.freqselector_high = QtWidgets.QSpinBox()
@@ -123,20 +129,20 @@ class MainQWidget(QtWidgets.QWidget):
         self.t0_hbox.addWidget(self.freqselector_high)
         self.freqselector_high.valueChanged.connect(self.freqselector_high_valueChanged)
 
-        self.chkPreview = QtWidgets.QCheckBox("Preview")
-        self.chkPreview.setChecked(True)
-        self.t0_vbox0.addWidget(self.chkPreview)
-        #self.chkPreview.stateChanged.connect(lambda:self.updatePreview(self.chkPreview)) #Signal
-        self.chkPreview.toggled.connect(self.updatePreview)
+        self.btnApplySlice = QtWidgets.QPushButton("Apply (slice)")
+        self.t0_vbox0.addWidget(self.btnApplySlice)
+        self.btnApplySlice.clicked.connect(self.updatePreview)
 
         self.btnApply = QtWidgets.QPushButton("Apply")
         self.t0_vbox0.addWidget(self.btnApply)
         self.btnApply.clicked.connect(self.btnApply_on_click) #Signal
 
+        # /tabMeasChargingArtif \
+        self.tabMeasChargingArtif = QtWidgets.QWidget()
+        self.tabwidget.addTab(self.tabMeasChargingArtif, "Measure") #Measure charging artifacts
 
-        # /Tab1 \
         self.vBox3 = QtWidgets.QVBoxLayout() #Items organised vertically
-        self.tab1.setLayout(self.vBox3 )
+        self.tabMeasChargingArtif.setLayout(self.vBox3 )
 
         #Add stuff
         self.grpBox2 = QtWidgets.QGroupBox("Measure charging")
@@ -162,6 +168,9 @@ class MainQWidget(QtWidgets.QWidget):
         self.grpBox2_vlayout.addWidget(self.btnMCCalculate)
         self.btnMCCalculate.clicked.connect(self.btnMCCalculate_onclick) #Signal
 
+        # /tabQuoll \
+        self.tabQuoll = QtWidgets.QWidget()
+        self.tabwidget.addTab(self.tabQuoll, "Quoll")
 
 
 
