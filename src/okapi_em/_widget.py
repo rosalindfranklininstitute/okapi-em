@@ -20,7 +20,7 @@ from napari.types import ImageData
 from . import filters
 from . import measure_charging
 
-#QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+import numpy as np
 
 class MainQWidget(QtWidgets.QWidget):
     # Sets the main window of the widget
@@ -28,7 +28,7 @@ class MainQWidget(QtWidgets.QWidget):
 
     curData = None
     curDataSlice = None
-    myImageLayer = None
+    myFFTFilterDirSliceRes = None
 
 
     def __init__(self, napari_viewer: 'napari.viewer.Viewer'):
@@ -160,7 +160,7 @@ class MainQWidget(QtWidgets.QWidget):
 
         self.btnApply = QtWidgets.QPushButton("Filter")
         self.t0_vbox0.addWidget(self.btnApply)
-        self.btnApply.clicked.connect(self.btnApply_on_click) #Signal
+        self.btnApply.clicked.connect(self.doFFTDirFilterWhole) #Signal
 
 
 
@@ -197,48 +197,96 @@ class MainQWidget(QtWidgets.QWidget):
         #check value is not lower than lowvalue
         v0 = self.freqselector_high.value()
         if v0< self.freqselector_low.value():
-            self.freqselector_high.setValue( v0+1)
-        self.doFFTDirFilterSlice()
+            self.freqselector_high.setValue( 0)
+        #self.doFFTDirFilterSlice()
     
     def freqselector_low_valueChanged(self):
         v0 = self.freqselector_low.value()
         if v0> self.freqselector_high.value():
             self.freqselector_low.setValue(v0-1)
-        self.doFFTDirFilterSlice()
-
-    def btnApply_on_click(self):
-        #From current layer/data selected, apply the filter to the whole data
-        print("NOT IMPLEMENTED YET")
-        #TODO
+        #self.doFFTDirFilterSlice()
 
     def doFFTDirFilterSlice(self):
-        #Check if the preview check box is enabled
-        if self.chkPreview.isChecked():
-            #Check if there is valid data for creating the preview
-            
-            if not self.curDataSlice is None:
-                #Debug
-                #print(f"curData.shape = {self.curData.shape}")
-                self.labelSliceDims.setText(str(self.curDataSlice.shape))
+        
+        print("doFFTDirFilterSlice()")
 
-                freq_low = self.freqselector_low.value()
-                freq_high = self.freqselector_high.value()
+        curDataSlice = self.w_setselect.get_active_image_selected_data_slice()
+        if not curDataSlice is None:
+            freq_low = self.freqselector_low.value()
+            freq_high = self.freqselector_high.value()
 
-                #print(f"freq_low : {freq_low} , freq_high: {freq_high}")
+            #Calculate the filtered data
+            dataPreview = filters.fft_bandpass_filter_dirx_2D(curDataSlice,freq_low, freq_high)
 
-                #Calculate the filtered data
-                dataPreview = filters.fft_bandpass_filter_dirx_2D(self.curDataSlice,freq_low, freq_high)
-
-                if self.myImageLayer is None or not self.myImageLayer in self.viewer.layers:
-                    #self.myImageLayer = self.viewer.add_image(dataPreview, name="preview")
-                    #self.myImageLayer._keep_auto_contrast=True #This helps show image with auto contrast however associated button does not show it is pressed
-                    #self.myImageLayer.reset_contrast_limits() #Try, doesnt work
-                    self.myImageLayer = self.viewer.add_image(dataPreview, name="preview", contrast_limits= (self.curDataSlice.min(), self.curDataSlice.max()))
-
-                else:
+            #Not sure if using a single preview data layer is ok
+            if self.myFFTFilterDirSliceRes is None or not self.myFFTFilterDirSliceRes in self.viewer.layers:
+                self.myFFTFilterDirSliceRes = self.viewer.add_image(dataPreview, name="FFT-dir filter slice", contrast_limits= (self.curDataSlice.min(), self.curDataSlice.max()))
+            else:
                     #Dont create a new layer, just modify it
-                    self.myImageLayer.data = dataPreview 
+                    self.myFFTFilterDirSliceRes.data = dataPreview 
                     #self.myImageLayer.refresh()
+
+    def doFFTDirFilterWhole(self):
+        #From current layer/data selected, apply the filter to the whole data
+        
+        print("doFFTDirFilterWhole()")
+        curData = self.w_setselect.get_active_image_selected_data()
+
+
+        if not curData is None:
+            freq_low = self.freqselector_low.value()
+            freq_high = self.freqselector_high.value()
+            
+            def func(data2d):
+                return filters.fft_bandpass_filter_dirx_2D(data2d,freq_low, freq_high)
+
+            cCalculate = cSliceBySliceFunctHelper(self.viewer,func, curData)
+
+            estimate_iters = cCalculate.get_len()
+            print(f"estimate_iters:{estimate_iters}")
+            
+            iter=0
+            def calbackfn():
+                print(f"slice iter:{iter}")
+                iter+=1
+
+            #Calculate the filtered data
+            data_filt_whole = cCalculate.run(calbackfn)
+
+            print("Calculation complete")
+
+            if not data_filt_whole is None:
+                self.viewer.add_image(data_filt_whole, name="FFT-dir filter", contrast_limits= (self.curDataSlice.min(), self.curDataSlice.max()))
+
+
+        #TODO
+
+        # if self.chkPreview.isChecked():
+        #     #Check if there is valid data for creating the preview
+            
+        #     if not self.curDataSlice is None:
+        #         #Debug
+        #         #print(f"curData.shape = {self.curData.shape}")
+        #         self.labelSliceDims.setText(str(self.curDataSlice.shape))
+
+        #         freq_low = self.freqselector_low.value()
+        #         freq_high = self.freqselector_high.value()
+
+        #         #print(f"freq_low : {freq_low} , freq_high: {freq_high}")
+
+        #         #Calculate the filtered data
+        #         dataPreview = filters.fft_bandpass_filter_dirx_2D(self.curDataSlice,freq_low, freq_high)
+
+        #         if self.myImageLayer is None or not self.myImageLayer in self.viewer.layers:
+        #             #self.myImageLayer = self.viewer.add_image(dataPreview, name="preview")
+        #             #self.myImageLayer._keep_auto_contrast=True #This helps show image with auto contrast however associated button does not show it is pressed
+        #             #self.myImageLayer.reset_contrast_limits() #Try, doesnt work
+        #             self.myImageLayer = self.viewer.add_image(dataPreview, name="preview", contrast_limits= (self.curDataSlice.min(), self.curDataSlice.max()))
+
+        #         else:
+        #             #Dont create a new layer, just modify it
+        #             self.myImageLayer.data = dataPreview 
+        #             #self.myImageLayer.refresh()
 
     # def btnSetDataSourceCurrent_on_click(self):
     #     #Check if there is valid data for creating the preview
@@ -306,7 +354,7 @@ class MainQWidget(QtWidgets.QWidget):
         #Read tile size parameter and gets current image
         tilesize = self.mc_tilesize_selector.value()
 
-        data0 = self.w_setselect.get_active_image_data_slice()
+        data0 = self.w_setselect.get_active_image_selected_data_slice()
 
         curDataSlice=data0
         if not curDataSlice is None:
@@ -389,7 +437,6 @@ class widget_ImageSetCurrrentSelect(QtWidgets.QWidget):
             print("Current active layer name is: ", nap_image.name)
             self.curImage = nap_image
             self.l_shape_v.setText(str(self.curImage.data.shape))
-            
 
     def get_active_image(self):
         active0=None
@@ -399,21 +446,21 @@ class widget_ImageSetCurrrentSelect(QtWidgets.QWidget):
 
         return active0
 
-    def get_image_selected_data(self) ->ImageData:
-        print("get_image_selected_data()")
+    def get_active_image_selected_data(self) ->ImageData:
+        print("get_active_image_selected_data()")
         if self.curImage is None:
             self.b_set_on_click() #Does the same thing as clicking the button to set default image data
-            return self.curImage.data
+            #return self.curImage.data
         
         return self.curImage.data
     
 
-    def get_active_image_data_slice(self):
-        print("get_active_image_data_slice()")
+    def get_active_image_selected_data_slice(self):
+        print("get_active_image_selected_data_slice()")
 
         curDataSlice=None
 
-        curData = self.get_image_selected_data()
+        curData = self.get_active_image_selected_data()
         #print(f"curData:{curData}")
 
         if not curData is None:
@@ -449,4 +496,155 @@ class widget_ImageSetCurrrentSelect(QtWidgets.QWidget):
                 curDataSlice= curData
             
         return curDataSlice
+
+    # #TODO: Create function that returns iterator
+    # class iteratorSliceBySlice:
+    #     '''
+    #     Iterator that gets data slice by slice
+        
+    #     It is implemented using the alternative iterator protocol
+    #     that uses __getitem__ and __len__'''
+    #     def __init__(self,data, viewer):
+    #         if data.ndim==3:
+    #             #gets orientation of viewing. If viewer is in 3D it sets to z-axis order=0
+    #             self.order=0
+    #             if self.viewer.dims.ndisplay == 2:
+    #                 dims0 = self.viewer.dims
+    #                 self.order = dims0.order[0] #Gets the axis (or plane), that the Viewer is currently viewing
+                
+
+    #             self.i=0
+
+    #             self.data_oriented = None
+
+    #             if self.order == 0: #z
+    #                 self.data_oriented=data
+    #                 self.l_slicingaxis_v.setText('z')
+    #             elif self.order == 1: #y
+    #                 self.data_oriented = np.transpose(data,(1,2,0))
+    #                 self.l_slicingaxis_v.setText("y")
+    #             else: #x
+    #                 self.data_oriented = np.transpose(data,(2,0,1))
+    #                 self.l_slicingaxis_v.setText("x")
+
+                
+    #         else:
+    #             return None
+
+    #     def __iter__(self, data, viewer):
+            
+
+    #         return self #Needed
+
+    #     def __next__(self):
+
+class cSliceBySliceFunctHelper():
+
+    def __init__(self, npviewer, func, data3d, data3d_opt=None):
+        '''
+            data3d
+            func to apply to slices. Must be like func(data2D) -> datares2D
+
+            Some functions require two datasets, hence the optional data3d_opt
+            In this case func(data2D, data3d_opt) -> datares2D
+        '''
+
+        # TODO: Add support for data3d_opt
+
+        self.viewer = npviewer
+
+        if data3d.ndim==3:
+            #gets orientation of viewing. If viewer is in 3D it sets to z-axis order=0
+            self.order=0
+            if self.viewer.dims.ndisplay == 2:
+                dims0 = self.viewer.dims
+                self.order = dims0.order[0] #Gets the axis (or plane), that the Viewer is currently viewing
+
+            self.data_oriented = None
+
+            self.data_opt_oriented = None
+            self.has_opt = False
+            if not data3d_opt is None:
+                self.has_opt = True
+
+            if self.order == 0: #z
+                self.data_oriented=data3d
+                #self.l_slicingaxis_v.setText('z')
+                if self.has_opt:
+                    self.data_opt_oriented=data3d_opt
+
+            elif self.order == 1: #y
+                self.data_oriented = np.transpose(data3d,(1,2,0))
+                #self.l_slicingaxis_v.setText("y")
+                if self.has_opt:
+                    self.data_opt_oriented= np.transpose(data3d_opt,(1,2,0))
+            else: #x
+                self.data_oriented = np.transpose(data3d,(2,0,1))
+                #self.l_slicingaxis_v.setText("x")
+                if self.has_opt:
+                    self.data_opt_oriented= np.transpose(data3d_opt,(2,0,1))
+
+            self.n= self.data_oriented.shape[0]
+
+            self.func = func
+
+        else:
+            print("data is not 3D")
+    
+    def run(self, callbackfn=None):
+        datares_shaperestored=None
+        
+        if not self.data_oriented is None:
+            
+            #Check result type with first slice
+            if not self.has_opt:
+                slice0res = self.func(self.data_oriented[0,:,:])
+            else:
+                slice0res = self.func(self.data_oriented[0,:,:], self.data_opt_oriented[0,:,:])
+
+            #Set result to have the same type as first layer result
+            datares = np.zeros_like(self.data_oriented, dtype=slice0res.dtype)
+
+            datares[0,:,:]= slice0res
+
+            #callback
+            if not callbackfn is None:
+                callbackfn()
+
+            #Do for the rest of slices
+            for i in range(1, self.n):
+
+                #dataslice = self.data_oriented[i,:,:]
+                
+                #Apply function
+                if not self.has_opt:
+                    datasliceres = self.func(self.data_oriented[i,:,:])
+                else:
+                    datasliceres = self.func(self.data_oriented[i,:,:],self.data_opt_oriented[i,:,:])
+                
+                datares[i,:,:] = datasliceres
+
+                #callback
+                if not callbackfn is None:
+                    callbackfn()
+                
+            #Upon completion restore the shape of the data
+            if self.order == 0: #z
+                datares_shaperestored = datares
+            elif self.order == 1: #y
+                datares_shaperestored = np.transpose(datares,(2,0,1))
+            else: #x
+                datares_shaperestored = np.transpose(datares,(1,2,0))
+
+        return datares_shaperestored
+    
+    def get_len(self):
+        #Returns number of iterations expected for the calculation
+
+        niter=0
+        if not self.data_oriented is None:
+            niter= self.n
+
+        return niter
+
 
