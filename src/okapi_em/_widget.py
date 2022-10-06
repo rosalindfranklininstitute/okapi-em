@@ -220,7 +220,7 @@ class MainQWidget(QtWidgets.QWidget):
 
             #Not sure if using a single preview data layer is ok
             if self.myFFTFilterDirSliceRes is None or not self.myFFTFilterDirSliceRes in self.viewer.layers:
-                self.myFFTFilterDirSliceRes = self.viewer.add_image(dataPreview, name="FFT-dir filter slice", contrast_limits= (self.curDataSlice.min(), self.curDataSlice.max()))
+                self.myFFTFilterDirSliceRes = self.viewer.add_image(dataPreview, name="FFT-dir filter slice", contrast_limits= (curDataSlice.min(), curDataSlice.max()))
             else:
                     #Dont create a new layer, just modify it
                     self.myFFTFilterDirSliceRes.data = dataPreview 
@@ -245,10 +245,10 @@ class MainQWidget(QtWidgets.QWidget):
             estimate_iters = cCalculate.get_len()
             print(f"estimate_iters:{estimate_iters}")
             
-            iter=0
+            self.iter=0
             def calbackfn():
-                print(f"slice iter:{iter}")
-                iter+=1
+                print(f"slice iter:{self.iter}")
+                self.iter+=1
 
             #Calculate the filtered data
             data_filt_whole = cCalculate.run(calbackfn)
@@ -256,7 +256,7 @@ class MainQWidget(QtWidgets.QWidget):
             print("Calculation complete")
 
             if not data_filt_whole is None:
-                self.viewer.add_image(data_filt_whole, name="FFT-dir filter", contrast_limits= (self.curDataSlice.min(), self.curDataSlice.max()))
+                self.viewer.add_image(data_filt_whole, name="FFT-dir filter")
 
 
         #TODO
@@ -394,7 +394,7 @@ class widget_ImageSetCurrrentSelect(QtWidgets.QWidget):
         layout = QtWidgets.QGridLayout()
         self.setLayout(layout)
 
-        self.b_set = QtWidgets.QPushButton("Set currently selected 2")
+        self.b_set = QtWidgets.QPushButton("Set currently selected")
         layout.addWidget(self.b_set,0,0)
         self.b_set.clicked.connect(self.b_set_on_click) #Signal
   
@@ -453,7 +453,6 @@ class widget_ImageSetCurrrentSelect(QtWidgets.QWidget):
             #return self.curImage.data
         
         return self.curImage.data
-    
 
     def get_active_image_selected_data_slice(self):
         print("get_active_image_selected_data_slice()")
