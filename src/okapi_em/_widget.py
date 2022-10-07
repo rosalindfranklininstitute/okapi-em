@@ -15,12 +15,17 @@ from qtpy import QtWidgets
 #from superqt import QRangeSlider
 
 import napari
-from napari.types import ImageData
+from napari.types import ImageData, LayerDataTuple
 
 from . import filters
 from . import measure_charging
 
 import numpy as np
+
+from magicgui import magicgui
+from magicgui import magic_factory
+
+import chafer
 
 class MainQWidget(QtWidgets.QWidget):
     # Sets the main window of the widget
@@ -34,6 +39,8 @@ class MainQWidget(QtWidgets.QWidget):
     def __init__(self, napari_viewer: 'napari.viewer.Viewer'):
         super().__init__()
         self.viewer = napari_viewer #Reference to the viewer that will be needed later
+
+        print(f"napari_viewer: {napari_viewer}")
 
         #layout = QVBoxLayout()
         self.setLayout(QtWidgets.QVBoxLayout())
@@ -52,8 +59,7 @@ class MainQWidget(QtWidgets.QWidget):
         self.group_box0_vbox0 = QtWidgets.QVBoxLayout()
         self.group_box0.setLayout(self.group_box0_vbox0)
 
-        self.label2 = QtWidgets.QLabel("Set data source")
-        self.group_box0_vbox0.addWidget(self.label2)
+        self.group_box0_vbox0.addWidget(QtWidgets.QLabel("Set data source"))
         # self.btnSetDataSourceCurrent = QtWidgets.QPushButton("Set currently selected")
         # self.group_box0_vbox0.addWidget(self.btnSetDataSourceCurrent)
         # self.btnSetDataSourceCurrent.clicked.connect(self.btnSetDataSourceCurrent_on_click) #Signal
@@ -150,9 +156,49 @@ class MainQWidget(QtWidgets.QWidget):
         self.t0_vbox0.addWidget(self.rbChaffer)
         self.grpBoxChaffer = QtWidgets.QGroupBox("")
         self.t0_vbox0.addWidget(self.grpBoxChaffer) #Add chaffer UI to this grpBoxChaffer
+        self.grpBoxChaffer_layout = QtWidgets.QVBoxLayout()
+        self.grpBoxChaffer.setLayout(self.grpBoxChaffer_layout)
+
+        #label data selector
+        self.w_setselectlabel = widget_ImageSetCurrrentSelect(napari_viewer)
+        self.grpBoxChaffer_layout.addWidget(self.w_setselectlabel)
+
+        #need parameters
+        #nlinesaverage=20,
+        #data_fit_max_length_edge_px = 700,
+        #data_fit_min_length_px = 50
+
+        qgrid2_layout = QtWidgets.QGridLayout()
+        self.grpBoxChaffer_layout.addLayout(qgrid2_layout)
+
+        qgrid2_layout.addWidget( QtWidgets.QLabel("nlinesaverage") ,0,0)
+        self.chafer_widg_nlines = QtWidgets.QSpinBox()
+        self.chafer_widg_nlines.setMinimum(1)
+        self.chafer_widg_nlines.setMaximum(65536)
+        self.chafer_widg_nlines.setValue(20)
+        qgrid2_layout.addWidget( self.chafer_widg_nlines ,0,1)
+
+        qgrid2_layout.addWidget( QtWidgets.QLabel("fit length min px") ,1,0)
+        self.chafer_widg_minlength = QtWidgets.QSpinBox()
+        self.chafer_widg_minlength.setMinimum(1)
+        self.chafer_widg_minlength.setMaximum(65536)
+        self.chafer_widg_minlength.setValue(50)
+        qgrid2_layout.addWidget( self.chafer_widg_minlength ,1,1)
+
+        qgrid2_layout.addWidget( QtWidgets.QLabel("fit length max px") ,2,0)
+        self.chafer_widg_maxlength = QtWidgets.QSpinBox()
+        self.chafer_widg_maxlength.setMinimum(1)
+        self.chafer_widg_maxlength.setMaximum(65536)
+        self.chafer_widg_maxlength.setValue(700)
+        qgrid2_layout.addWidget( self.chafer_widg_maxlength ,2,1)
+        
+        #not working
+        # self.chafer_widget = chaffer_magicgui_widget.native
+        # self.t0_vbox0.addWidget(self.chafer_widget)
+        #self.t0_vbox0.addWidget(chafer_widget.native)
+
         #Need select source file,
         #Need user to select labels file
-
 
         self.btnFFTDirFilterSlice = QtWidgets.QPushButton("Filter (slice)")
         self.t0_vbox0.addWidget(self.btnFFTDirFilterSlice)
@@ -161,8 +207,6 @@ class MainQWidget(QtWidgets.QWidget):
         self.btnApply = QtWidgets.QPushButton("Filter")
         self.t0_vbox0.addWidget(self.btnApply)
         self.btnApply.clicked.connect(self.doFFTDirFilterWhole) #Signal
-
-
 
         self.vBox3 = QtWidgets.QVBoxLayout() #Items organised vertically
         self.tabMeasChargingArtif.setLayout(self.vBox3 )
@@ -192,7 +236,6 @@ class MainQWidget(QtWidgets.QWidget):
         self.btnMCCalculate.clicked.connect(self.btnMCCalculate_onclick) #Signal
 
 
-
     def freqselector_high_valueChanged(self):
         #check value is not lower than lowvalue
         v0 = self.freqselector_high.value()
@@ -212,18 +255,49 @@ class MainQWidget(QtWidgets.QWidget):
 
         curDataSlice = self.w_setselect.get_active_image_selected_data_slice()
         if not curDataSlice is None:
-            freq_low = self.freqselector_low.value()
-            freq_high = self.freqselector_high.value()
 
-            #Calculate the filtered data
-            dataPreview = filters.fft_bandpass_filter_dirx_2D(curDataSlice,freq_low, freq_high)
+            # myfunc=None
 
-            #Not sure if using a single preview data layer is ok
-            if self.myFFTFilterDirSliceRes is None or not self.myFFTFilterDirSliceRes in self.viewer.layers:
-                self.myFFTFilterDirSliceRes = self.viewer.add_image(dataPreview, name="FFT-dir filter slice", contrast_limits= (curDataSlice.min(), curDataSlice.max()))
-            else:
+            # freq_low = self.freqselector_low.value()
+            # freq_high = self.freqselector_high.value()
+            # def func1(data2D):
+            #     return filters.fft_bandpass_filter_dirx_2D(data2D,freq_low, freq_high)
+
+            # c_filter = chafer.cls_charge_artifact_suppression_filter(
+            #     self.chafer_widg_nlines.value(),
+            #     self.chafer_widg_maxlength.value(),
+            #     self.chafer_widg_minlength.value())
+
+            # def func2(data2d, dlabels):
+            #     res,opts= c_filter.charge_artifact_FD_filter_downup_av_prevlines3_2d(data2d,dlabels)
+            #     return res
+
+            datares=None
+
+            #Check which filter to use
+            if self.rbDirFFT.isChecked():
+                freq_low = self.freqselector_low.value()
+                freq_high = self.freqselector_high.value()
+                
+                datares = filters.fft_bandpass_filter_dirx_2D(curDataSlice,freq_low, freq_high)
+
+            elif self.rbChaffer.isChecked():
+                curLabelsSlice= self.w_setselectlabel.get_active_image_selected_data_slice()
+                c_filter = chafer.cls_charge_artifact_suppression_filter(
+                    self.chafer_widg_nlines.value(),
+                    self.chafer_widg_maxlength.value(),
+                    self.chafer_widg_minlength.value()
+                    )
+                
+                datares, opts = c_filter.charge_artifact_FD_filter_downup_av_prevlines3_2d(curDataSlice, curLabelsSlice)
+
+            if not datares is None:
+                #Not sure if using a single preview data layer is ok
+                if self.myFFTFilterDirSliceRes is None or not self.myFFTFilterDirSliceRes in self.viewer.layers:
+                    self.myFFTFilterDirSliceRes = self.viewer.add_image(datares, name="c-filtered", contrast_limits= (curDataSlice.min(), curDataSlice.max()))
+                else:
                     #Dont create a new layer, just modify it
-                    self.myFFTFilterDirSliceRes.data = dataPreview 
+                    self.myFFTFilterDirSliceRes.data = datares
                     #self.myImageLayer.refresh()
 
     def doFFTDirFilterWhole(self):
@@ -232,34 +306,56 @@ class MainQWidget(QtWidgets.QWidget):
         print("doFFTDirFilterWhole()")
         curData = self.w_setselect.get_active_image_selected_data()
 
-
         if not curData is None:
-            freq_low = self.freqselector_low.value()
-            freq_high = self.freqselector_high.value()
             
-            def func(data2d):
-                return filters.fft_bandpass_filter_dirx_2D(data2d,freq_low, freq_high)
-
-            cCalculate = cSliceBySliceFunctHelper(self.viewer,func, curData)
-
-            estimate_iters = cCalculate.get_len()
-            print(f"estimate_iters:{estimate_iters}")
+            data_filt_whole=None
             
-            self.iter=0
-            def calbackfn():
-                print(f"slice iter:{self.iter}")
-                self.iter+=1
+            cCalculate=None
 
-            #Calculate the filtered data
-            data_filt_whole = cCalculate.run(calbackfn)
+            #Check which filter to use
+            if self.rbDirFFT.isChecked():
+                freq_low = self.freqselector_low.value()
+                freq_high = self.freqselector_high.value()
+            
+                def func(data2d):
+                    return filters.fft_bandpass_filter_dirx_2D(data2d,freq_low, freq_high)
 
-            print("Calculation complete")
+                cCalculate = cSliceBySliceFunctHelper(self.viewer,func, curData)
 
-            if not data_filt_whole is None:
-                self.viewer.add_image(data_filt_whole, name="FFT-dir filter")
+            
+            elif self.rbChaffer.isChecked():
+                #Dont use the chaffer's 3d method
+                #Use this engine to do slice by slice so that it can be monitored
 
+                curLabels= self.w_setselectlabel.get_active_image_selected_data()
 
-        #TODO
+                c_filter = chafer.cls_charge_artifact_suppression_filter(
+                    self.chafer_widg_nlines.value(),
+                    self.chafer_widg_maxlength.value(),
+                    self.chafer_widg_minlength.value()
+                    )
+
+                def func(data2d, labels2d):
+                    datares, opts = c_filter.charge_artifact_FD_filter_downup_av_prevlines3_2d(data2d, labels2d)
+                    return datares
+
+                cCalculate = cSliceBySliceFunctHelper(self.viewer,func, curData, curLabels)
+            
+            if not cCalculate is None:
+                estimate_iters = cCalculate.get_len()
+                print(f"estimate_iters:{estimate_iters}")
+                self.iter=0
+                def calbackfn():
+                    print(f"slice iter:{self.iter} / {estimate_iters}")
+                    self.iter+=1
+
+                data_filt_whole = cCalculate.run(calbackfn)
+
+                print("Calculation complete")
+
+                if not data_filt_whole is None:
+                    self.viewer.add_image(data_filt_whole, name="FFT-dir filter")
+
 
         # if self.chkPreview.isChecked():
         #     #Check if there is valid data for creating the preview
@@ -389,7 +485,9 @@ class widget_ImageSetCurrrentSelect(QtWidgets.QWidget):
 
     def __init__(self, napari_viewer: 'napari.viewer.Viewer'):
         super().__init__()
+
         self.viewer = napari_viewer #Reference to the viewer that will be needed later
+        #self.viewer = napari.current_viewer() #Doesnt work, returns None
 
         layout = QtWidgets.QGridLayout()
         self.setLayout(layout)
@@ -432,7 +530,8 @@ class widget_ImageSetCurrrentSelect(QtWidgets.QWidget):
     def set_default_napari_image(self,nap_image):
         print("set_default_napari_image()")
         self.curImage=None
-        if isinstance(nap_image, napari.layers.Image):
+        print(f"type(nap_image) : {type(nap_image) }")
+        if isinstance(nap_image, napari.layers.Image) or isinstance(nap_image, napari.layers.Labels):
             self.l_name_v.setText(nap_image.name)
             print("Current active layer name is: ", nap_image.name)
             self.curImage = nap_image
@@ -443,6 +542,8 @@ class widget_ImageSetCurrrentSelect(QtWidgets.QWidget):
         if not self.viewer is None:
             active0 = self.viewer.layers.selection.active #check if any layer is active
             self.set_default_napari_image(active0)
+        else:
+            print("get_active_image(): no napari.viewer, cannot get active image")
 
         return active0
 
@@ -539,103 +640,122 @@ class widget_ImageSetCurrrentSelect(QtWidgets.QWidget):
 
 class cSliceBySliceFunctHelper():
 
-    def __init__(self, npviewer, func, data3d, data3d_opt=None):
+    def __init__(self,
+            napari_viewer: 'napari.viewer.Viewer',
+            func,
+            data, 
+            data_opt=None 
+        ):
         '''
-            data3d
+            data
             func to apply to slices. Must be like func(data2D) -> datares2D
 
             Some functions require two datasets, hence the optional data3d_opt
             In this case func(data2D, data3d_opt) -> datares2D
         '''
 
-        # TODO: Add support for data3d_opt
+        #viewer = napari.current_viewer()
+        viewer = napari_viewer
 
-        self.viewer = npviewer
+        self.datadim = data.ndim
+        self.data_oriented = None
+        self.data_opt_oriented = None
 
-        if data3d.ndim==3:
+        if data.ndim==3:
             #gets orientation of viewing. If viewer is in 3D it sets to z-axis order=0
             self.order=0
-            if self.viewer.dims.ndisplay == 2:
-                dims0 = self.viewer.dims
+            if viewer.dims.ndisplay == 2:
+                dims0 = viewer.dims
                 self.order = dims0.order[0] #Gets the axis (or plane), that the Viewer is currently viewing
 
-            self.data_oriented = None
-
-            self.data_opt_oriented = None
             self.has_opt = False
-            if not data3d_opt is None:
+            if not data_opt is None:
                 self.has_opt = True
 
             if self.order == 0: #z
-                self.data_oriented=data3d
+                self.data_oriented=data
                 #self.l_slicingaxis_v.setText('z')
                 if self.has_opt:
-                    self.data_opt_oriented=data3d_opt
+                    self.data_opt_oriented=data_opt
 
             elif self.order == 1: #y
-                self.data_oriented = np.transpose(data3d,(1,2,0))
+                self.data_oriented = np.transpose(data,(1,2,0))
                 #self.l_slicingaxis_v.setText("y")
                 if self.has_opt:
-                    self.data_opt_oriented= np.transpose(data3d_opt,(1,2,0))
+                    self.data_opt_oriented= np.transpose(data_opt,(1,2,0))
             else: #x
-                self.data_oriented = np.transpose(data3d,(2,0,1))
+                self.data_oriented = np.transpose(data,(2,0,1))
                 #self.l_slicingaxis_v.setText("x")
                 if self.has_opt:
-                    self.data_opt_oriented= np.transpose(data3d_opt,(2,0,1))
+                    self.data_opt_oriented= np.transpose(data_opt,(2,0,1))
 
             self.n= self.data_oriented.shape[0]
 
             self.func = func
 
         else:
-            print("data is not 3D")
+            print("data is not 3D. Function will be applied to the single slice")
+            self.data_oriented = data
+            self.data_opt_oriented = data_opt
+            self.n=1
     
     def run(self, callbackfn=None):
-        datares_shaperestored=None
-        
-        if not self.data_oriented is None:
+        if self.datadim==3:
+            datares_shaperestored=None
             
-            #Check result type with first slice
-            if not self.has_opt:
-                slice0res = self.func(self.data_oriented[0,:,:])
-            else:
-                slice0res = self.func(self.data_oriented[0,:,:], self.data_opt_oriented[0,:,:])
-
-            #Set result to have the same type as first layer result
-            datares = np.zeros_like(self.data_oriented, dtype=slice0res.dtype)
-
-            datares[0,:,:]= slice0res
-
-            #callback
-            if not callbackfn is None:
-                callbackfn()
-
-            #Do for the rest of slices
-            for i in range(1, self.n):
-
-                #dataslice = self.data_oriented[i,:,:]
+            if not self.data_oriented is None:
                 
-                #Apply function
+                #Check result type with first slice
                 if not self.has_opt:
-                    datasliceres = self.func(self.data_oriented[i,:,:])
+                    slice0res = self.func(self.data_oriented[0,:,:])
                 else:
-                    datasliceres = self.func(self.data_oriented[i,:,:],self.data_opt_oriented[i,:,:])
-                
-                datares[i,:,:] = datasliceres
+                    slice0res = self.func(self.data_oriented[0,:,:], self.data_opt_oriented[0,:,:])
+
+                #Set result to have the same type as first layer result
+                datares = np.zeros_like(self.data_oriented, dtype=slice0res.dtype)
+
+                datares[0,:,:]= slice0res
 
                 #callback
                 if not callbackfn is None:
                     callbackfn()
-                
-            #Upon completion restore the shape of the data
-            if self.order == 0: #z
-                datares_shaperestored = datares
-            elif self.order == 1: #y
-                datares_shaperestored = np.transpose(datares,(2,0,1))
-            else: #x
-                datares_shaperestored = np.transpose(datares,(1,2,0))
 
-        return datares_shaperestored
+                #Do for the rest of slices
+                for i in range(1, self.n):
+                    #dataslice = self.data_oriented[i,:,:]
+
+                    #Apply function
+                    if not self.has_opt:
+                        datasliceres = self.func(self.data_oriented[i,:,:])
+                    else:
+                        datasliceres = self.func(self.data_oriented[i,:,:],self.data_opt_oriented[i,:,:])
+                    
+                    datares[i,:,:] = datasliceres
+
+                    #callback
+                    if not callbackfn is None:
+                        callbackfn()
+                    
+                #Upon completion restore the shape of the data
+                if self.order == 0: #z
+                    datares_shaperestored = datares
+                elif self.order == 1: #y
+                    datares_shaperestored = np.transpose(datares,(2,0,1))
+                else: #x
+                    datares_shaperestored = np.transpose(datares,(1,2,0))
+
+            return datares_shaperestored
+        
+        elif self.datadim==2:
+            data2dres = None
+             #Apply function
+            if not self.has_opt:
+                data2dres = self.func(self.data_oriented)
+            else:
+                data2dres = self.func(self.data_oriented,self.data_opt_oriented)
+            return data2dres
+        
+        return None
     
     def get_len(self):
         #Returns number of iterations expected for the calculation
@@ -647,3 +767,36 @@ class cSliceBySliceFunctHelper():
         return niter
 
 
+#NOT WORKING
+# Try to write a widget for chaffer using magicgui
+
+# # In Redlionfish package the decorator @magicfactory is used instead
+# #@magicgui(
+# @magic_factory(
+#     imgd1={'label': 'Data'}, 
+#     imgd2={'label': 'Labels'},
+#     call_button="execute",
+#     layout="vertical",
+#     bThisSlice={'label':'This slice'}
+#     )
+# def chaffer_magicgui_widget(
+#         imgd1: ImageData,
+#         imgd2: ImageData,
+#         bThisSlice=True,
+#         nlinesaverage=20,
+#         data_fit_max_length_edge_px = 700,
+#         data_fit_min_length_px = 50
+#     ) -> LayerDataTuple: #Result is a LayerDataTuple, like (data, {dict_properties})
+
+#     datares = None
+
+#     c_filter = chafer.cls_charge_artifact_suppression_filter(nlinesaverage,data_fit_max_length_edge_px, data_fit_min_length_px)
+
+#     if bThisSlice:
+#         res0, opts = c_filter.charge_artifact_FD_filter_downup_av_prevlines3_2d(imgd1, imgd2)
+#         ret = ( res0 , { 'name':'chafer result of slice'})
+#     else:
+#         res0, opts = c_filter.charge_artifact_FD_filter_downup_av_prevlines3_2d(imgd1, imgd2)
+#         ret = ( res0 , { 'name':'chafer result'})
+
+#     return ret

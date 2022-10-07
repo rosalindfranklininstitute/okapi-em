@@ -5,17 +5,9 @@ contributions:
     - id: okapi-em.main_qwidget
       python_name: okapi_em._widget:MainQWidget
       title: Okapi-EM Main
-    # - id: okapi-em.make_magic_widget
-    #   python_name: okapi-em._widget:example_magic_widget
-    #   title: Make example magic widget
-    # - id: okapi-em.make_func_widget
-    #   python_name: okapi-em._widget:example_function_widget
-    #   title: Make example function widget   
+  
   widgets:
     - command: okapi-em.main_qwidget
       display_name: Okapi-EM
-    # - command: okapi-em.make_magic_widget
-    #   display_name: Example Magic Widget
-    # - command: okapi-em.make_func_widget
-    #   autogenerate: true
-    #   display_name: Example Function Widget 
+
+# https://napari.org/stable/plugins/contributions.html#contributions-widgets
