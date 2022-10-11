@@ -16,6 +16,7 @@ from qtpy import QtWidgets
 
 import napari
 from napari.types import ImageData, LayerDataTuple
+from napari.utils import progress
 
 from . import filters
 from . import measure_charging
@@ -26,6 +27,15 @@ from magicgui import magicgui
 from magicgui import magic_factory
 
 import chafer
+
+#Quoll (FRC) as an optional package?
+is_quoll_available = True
+try:
+    import quoll
+except:
+    is_quoll_available=False
+
+from . import slice_alignment
 
 class MainQWidget(QtWidgets.QWidget):
     # Sets the main window of the widget
@@ -107,9 +117,6 @@ class MainQWidget(QtWidgets.QWidget):
         self.tabMeasChargingArtif = QtWidgets.QWidget()
         self.tabwidget.addTab(self.tabMeasChargingArtif, "Measure") #Measure charging artifacts
 
-        # /tabQuoll \
-        self.tabQuoll = QtWidgets.QWidget()
-        self.tabwidget.addTab(self.tabQuoll, "Quoll")
 
 
         self.t0_vbox0 = QtWidgets.QVBoxLayout() #Items organised vertically
@@ -235,6 +242,26 @@ class MainQWidget(QtWidgets.QWidget):
         self.grpBox2_vlayout.addWidget(self.btnMCCalculate)
         self.btnMCCalculate.clicked.connect(self.btnMCCalculate_onclick) #Signal
 
+        # /tabSliceAlignemnt \
+        self.tabSliceAlignment = QtWidgets.QWidget()
+        self.tabwidget.addTab(self.tabSliceAlignment, "Slice Alignment")
+        self.tabSliceAlignment_l = QtWidgets.QVBoxLayout() #Items organised vertically
+        self.tabSliceAlignment.setLayout(self.tabSliceAlignment_l)
+        #Button to start the alignement
+        self.btnSACalculate = QtWidgets.QPushButton("Align")
+        self.tabSliceAlignment_l.addWidget(self.btnSACalculate)
+        self.btnSACalculate.clicked.connect(self.btnSACalculate_onclick) #Signal
+
+
+
+
+        # /tabQuoll \
+        # TODO: not implemented yet
+        # TODO: Make this optional?
+        if is_quoll_available:
+            self.tabQuoll = QtWidgets.QWidget()
+            self.tabwidget.addTab(self.tabQuoll, "Quoll")
+
 
     def freqselector_high_valueChanged(self):
         #check value is not lower than lowvalue
@@ -342,6 +369,9 @@ class MainQWidget(QtWidgets.QWidget):
                 cCalculate = cSliceBySliceFunctHelper(self.viewer,func, curData, curLabels)
             
             if not cCalculate is None:
+
+                #TODO: USe the napari Activity progress bar
+
                 estimate_iters = cCalculate.get_len()
                 print(f"estimate_iters:{estimate_iters}")
                 self.iter=0
@@ -458,6 +488,42 @@ class MainQWidget(QtWidgets.QWidget):
             overlay = measure_charging.generate_heatmap(curDataSlice, tilesize)
             self.viewer.add_image(overlay, name="Charging artefacts", opacity=0.3, colormap="viridis")
 
+
+    def btnSACalculate_onclick(self):
+        print("btnSACalculate_onclick()")
+
+        res=None
+
+
+        data3d = self.w_setselectlabel.get_active_image_selected_data()
+
+        if data3d.ndim==3:
+
+            #Estimate number of iterations for progress bar
+            nslices = data3d.shape[0]
+            niterations = 2*(nslices+1)
+
+            pbr=progress(total=niterations,desc="Alignment progress")
+
+            def callbkfn():
+                pbr.update(1)
+                pbr.refresh()
+
+            #Show or not show Activity dialog?
+            activ_dialog=self.viewer.window._qt_viewer.window()._activity_dialog
+            activ_dialog.show()
+
+            res= slice_alignment.align_stack(data3d, slice_alignment.ALIGNMENT_METHOD_DEFAULT,callbkfn)
+            
+            pbr.close()
+            activ_dialog.hide()
+
+            if not res is None:
+                self.viewer.add_image(res, name="stack aligned")
+
+
+
+
     # def get_napari_image_list(self):
     #     #Code similar to found in
     #     # https://github.com/haesleinhuepf/napari-accelerated-pixel-and-object-classification/blob/main/napari_accelerated_pixel_and_object_classification/_dock_widget.py#L392
@@ -472,6 +538,9 @@ class MainQWidget(QtWidgets.QWidget):
     #     #         if l in selected_images:
     #     #             item.setSelected(True)
     #     pass
+
+
+
 
 
 
@@ -596,6 +665,10 @@ class widget_ImageSetCurrrentSelect(QtWidgets.QWidget):
                 curDataSlice= curData
             
         return curDataSlice
+
+
+ 
+
 
     # #TODO: Create function that returns iterator
     # class iteratorSliceBySlice:
