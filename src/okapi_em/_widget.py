@@ -494,7 +494,6 @@ class MainQWidget(QtWidgets.QWidget):
 
         res=None
 
-
         data3d = self.w_setselectlabel.get_active_image_selected_data()
 
         if data3d.ndim==3:
