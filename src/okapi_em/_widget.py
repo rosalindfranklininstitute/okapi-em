@@ -27,13 +27,8 @@ from magicgui import magicgui
 from magicgui import magic_factory
 
 import chafer
+from . import quoll_wrapper as quoll
 
-#Quoll (FRC) as an optional package?
-is_quoll_available = True
-try:
-    import quoll
-except:
-    is_quoll_available=False
 
 from . import slice_alignment
 
@@ -258,9 +253,17 @@ class MainQWidget(QtWidgets.QWidget):
         # /tabQuoll \
         # TODO: not implemented yet
         # TODO: Make this optional?
-        if is_quoll_available:
+        
+        if quoll.is_quoll_available:
             self.tabQuoll = QtWidgets.QWidget()
             self.tabwidget.addTab(self.tabQuoll, "Quoll")
+
+            self.vBox4 = QtWidgets.QVBoxLayout() #Items organised vertically
+            self.tabQuoll.setLayout(self.vBox4 )
+            self.btnQuollCalcFRC = QtWidgets.QPushButton("Calculate FRC (whole slice)")
+            self.vBox4.addWidget(self.btnQuollCalcFRC)
+            self.btnQuollCalcFRC.clicked.connect(self.btnQuollCalcFRC_onclick) #Signal
+
 
 
     def freqselector_high_valueChanged(self):
@@ -520,6 +523,16 @@ class MainQWidget(QtWidgets.QWidget):
             if not res is None:
                 self.viewer.add_image(res, name="stack aligned")
 
+    def btnQuollCalcFRC_onclick(self):
+        print("btnQuollCalcFRC_onclick()")
+
+        data2d = self.w_setselect.get_active_image_selected_data_slice()
+
+        res = quoll.getFRC(data2d)
+
+        print (f"res : {res}")
+
+        return
 
 
 
@@ -572,17 +585,21 @@ class widget_ImageSetCurrrentSelect(QtWidgets.QWidget):
         self.l_shape_v = QtWidgets.QLabel("")
         layout.addWidget(self.l_shape_v,2,1)
 
-        layout.addWidget(QtWidgets.QLabel("slicing axis"),3,0)
+        #layout.addWidget(QtWidgets.QLabel("slicing axis"),3,0)
         self.l_slicingaxis_v = QtWidgets.QLabel("")
-        layout.addWidget(self.l_slicingaxis_v,3,1)
+        # layout.addWidget(self.l_slicingaxis_v,3,1)
+        # #self.l_slicingaxis_v.hide() #Hide
+        # self.l_slicingaxis_v.setHidden(True) #Hide
 
-        layout.addWidget(QtWidgets.QLabel("slice shape"),4,0)
+        #layout.addWidget(QtWidgets.QLabel("slice shape"),4,0)
         self.l_sliceshape_v = QtWidgets.QLabel("")
-        layout.addWidget(self.l_sliceshape_v,4,1)
+        # layout.addWidget(self.l_sliceshape_v,4,1)
+        # self.l_sliceshape_v.hide() #Hide
 
-        layout.addWidget(QtWidgets.QLabel("nslice"),5,0)
+        #layout.addWidget(QtWidgets.QLabel("nslice"),5,0)
         self.l_nslice_v = QtWidgets.QLabel("")
-        layout.addWidget(self.l_nslice_v,5,1)
+        # layout.addWidget(self.l_nslice_v,5,1)
+        # self.l_nslice_v.hide() #Hide
 
         self.curImage=None
 
@@ -664,8 +681,6 @@ class widget_ImageSetCurrrentSelect(QtWidgets.QWidget):
                 curDataSlice= curData
             
         return curDataSlice
-
-
  
 
 
