@@ -20,6 +20,8 @@ def getFRC(data2square):
     '''
     res=None
 
+    # TODO: check data is square. If not, we may need to crop centre
+
     if data2square.ndim ==2:
 
         #Create temporary file, because quoll+miplib only works with quoll.io.reader.Img objects,
@@ -36,14 +38,25 @@ def getFRC(data2square):
             filename=image_filename
         )
 
-        results_df = oneimg.calc_frc_res(Img)
+        #results_df = oneimg.calc_frc_res(Img) #Images must be square
+        try:
+            import miplib.ui.cli.miplib_entry_point_options as opts
+            from miplib.data.io import read as miplibread
+
+            miplibImg = miplibread.get_image(Img.filename)
+            miplibargs = opts.get_frc_script_options([None])
+
+            results_frc1 = oneimg.miplib_oneimg_FRC_calibrated(miplibImg, miplibargs)
+            print (f"results_df : {results_frc1}")
+
+
+            frc_value = results_frc1.resolution["resolution"]
+            res= frc_value
+        except:
+            print("Error using miplib")
 
         tempdir.cleanup()
-
-        print (f"results_df : {results_df}")
-        res= results_df
-
-
+        
     return res
 
 def getTiledFRC(data2d):
