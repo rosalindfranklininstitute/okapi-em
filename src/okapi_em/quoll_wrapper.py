@@ -20,7 +20,7 @@ def getFRC(data2square):
     '''
     res=None
 
-    # TODO: check data is square. If not, we may need to crop centre
+    # check data is square. If not, we may need to crop centre
 
     if data2square.ndim ==2:
 
@@ -37,6 +37,7 @@ def getFRC(data2square):
         Img = reader.Image(
             filename=image_filename
         )
+        Img.pixel_size=1
 
         #results_df = oneimg.calc_frc_res(Img) #Images must be square
         try:
@@ -59,6 +60,58 @@ def getFRC(data2square):
         
     return res
 
-def getTiledFRC(data2d):
-    print("Not implemented yet")
-    pass
+def getTiledFRC(data2d, tilesize=256):
+    res=None
+
+    #check data is square. If not, we may need to crop centre
+
+    if data2d.ndim ==2:
+
+        tempdir = tempfile.TemporaryDirectory()
+            
+        image_filename = tempdir.name+'/image_temp.tif'
+        print(f'temporary image_filename: {image_filename}')
+
+        tifffile.imsave(image_filename,data2d)
+
+        Img = reader.Image(
+                filename=image_filename
+            )
+        Img.pixel_size=1 #prevent errors. quoll uses this to estimate resolution in physical units
+
+        dfres = oneimg.calc_local_frc(Img, tilesize, tempdir.name)
+
+        res = dfres,get_resolution_heatmap(Img, dfres)
+
+        tempdir.cleanup()
+
+    return res
+
+def get_resolution_heatmap(
+    Image,
+    results_df
+):
+    """Generate a heatmap of resolutions
+    
+    Optionally display the heatmap overlaid on the original image,
+    save this overlay, or save the heatmap alone.
+
+    Args:
+        Image (reader.Image): Quoll.reader.Image object
+        results_df (pd.DataFrame): output of `oneimg.calc_local_frc`
+
+    Returns:
+        _type_: _description_
+    """
+
+
+    tileshape = list(Image.tiles.values())[0].shape
+    restiles = [np.full(shape=tileshape, fill_value=res) for res in np.array(results_df.Resolution)]
+    heatmap =  tiles.reassemble_tiles(
+        tiles=restiles,
+        nTiles=Image.tile_arrangement,
+    )
+        
+    return heatmap
+
+

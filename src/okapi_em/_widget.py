@@ -251,8 +251,6 @@ class MainQWidget(QtWidgets.QWidget):
 
 
         # /tabQuoll \
-        # TODO: not implemented yet
-        # TODO: Make this optional?
         
         if quoll.is_quoll_available:
             self.tabQuoll = QtWidgets.QWidget()
@@ -260,9 +258,41 @@ class MainQWidget(QtWidgets.QWidget):
 
             self.vBox4 = QtWidgets.QVBoxLayout() #Items organised vertically
             self.tabQuoll.setLayout(self.vBox4 )
+            self.vBox4.addWidget(QtWidgets.QLabel("FRC calculations"))
             self.btnQuollCalcFRC = QtWidgets.QPushButton("Calculate FRC (whole slice)")
             self.vBox4.addWidget(self.btnQuollCalcFRC)
             self.btnQuollCalcFRC.clicked.connect(self.btnQuollCalcFRC_onclick) #Signal
+
+            self.hBox4 = QtWidgets.QHBoxLayout()
+            self.vBox4.addLayout(self.hBox4)
+            self.hBox4.addWidget(QtWidgets.QLabel("Value /px"))
+            self.lblFRCWholeImg=QtWidgets.QLabel("0")
+            self.hBox4.addWidget(self.lblFRCWholeImg)
+
+            self.btnQuollCalcFRCTiled = QtWidgets.QPushButton("Calculate FRC tiled")
+            self.vBox4.addWidget(self.btnQuollCalcFRCTiled)
+            self.btnQuollCalcFRCTiled.clicked.connect(self.btnQuollCalcFRCTiled_onclick) #Signal
+            qgrid3_layout = QtWidgets.QGridLayout()
+            self.vBox4.addLayout(qgrid3_layout)
+            qgrid3_layout.addWidget(QtWidgets.QLabel("tile size (px):"),0,0)
+            self.spbQuolTileSize = QtWidgets.QSpinBox()
+            self.spbQuolTileSize.setMinimum(8)
+            self.spbQuolTileSize.setMaximum(10000)
+            self.spbQuolTileSize.setValue(256)
+            qgrid3_layout.addWidget(self.spbQuolTileSize, 0,1)
+            self.quollTableContainerWidget=QtWidgets.QWidget()
+            qgrid3_layout.addWidget(self.quollTableContainerWidget)
+            #TODO add basic widget to self.quollTableContainerWidget so that table can be added
+            self.quollTableContainerWidgetLayout=QtWidgets.QVBoxLayout()
+            self.quollTableContainerWidget.setLayout(self.quollTableContainerWidgetLayout)
+            self.quollTable=widget_PandasDFTable(self.viewer)
+            self.quollTableContainerWidgetLayout.addWidget(self.quollTable)
+
+            #TODO: Need an object to output a pandas dataframe
+            #self.dfvQuollCalcFRCTiled = QtWidgets.Qdatafra
+
+
+
 
 
 
@@ -526,14 +556,63 @@ class MainQWidget(QtWidgets.QWidget):
     def btnQuollCalcFRC_onclick(self):
         print("btnQuollCalcFRC_onclick()")
 
-        data2d = self.w_setselect.get_active_image_selected_data_slice()
+        with progress(total=2,desc="FRC calculation in progress") as pbr:
 
-        res = quoll.getFRC(data2d)
+            data2d = self.w_setselect.get_active_image_selected_data_slice()
 
-        print (f"res : {res}")
+            pbr.update(1)
 
+            res = quoll.getFRC(data2d)
+
+            pbr.update(1)
+
+            print (f"FRC resolution : {res}")
+
+            #print result on a widget
+            self.lblFRCWholeImg.setText( f"{res:.4e}")
         return
 
+
+    def btnQuollCalcFRCTiled_onclick(self):
+        print("btnQuollCalcFRCTiled_onclick()")
+
+        #Gathers tile size parameter
+        tile_size = self.spbQuolTileSize.value()
+
+        #Runs the FRC calculation for tiles
+        with progress(total=2,desc="FRC tiled calculation in progress") as pbr:
+
+            data2d = self.w_setselect.get_active_image_selected_data_slice()
+
+            pbr.update(1)
+
+            res = quoll.getTiledFRC(data2d, tilesize=tile_size)
+
+            pbr.update(1)
+
+            print (f"FRC tiled result : {res}")
+
+            if not res is None:
+                dfres, heatmap = res
+
+                print(f"FRC result summary:{dfres.describe().to_dict()}")
+                #self.frctable = widget_PandasDFTable(self.viewer, dfres)
+                #self.quollTableContainerWidget.layout().addWidget(self.frctable)
+
+                #self.frctable = widget_PandasDFTable(self.quollTableContainerWidget, dfres)
+                #TODO remove all widgets if any
+                #self.quollTableContainerWidgetLayout.addWidget(widget_PandasDFTable(self.viewer, dfres))
+                #self.frctable = widget_PandasDFTable(self.viewer, dfres)
+                self.quollTable.setDataframe(dfres) #hopefully it will update by itself
+                
+                #TODO: display a heatmap
+                self.viewer.add_image(heatmap,name="FRC heatmap",
+                    colormap="viridis",
+                    opacity=0.3
+                )
+        return
+
+                
 
 
     # def get_napari_image_list(self):
@@ -887,3 +966,33 @@ class cSliceBySliceFunctHelper():
 #         ret = ( res0 , { 'name':'chafer result'})
 
 #     return ret
+
+
+class widget_PandasDFTable(QtWidgets.QTableWidget):
+    '''
+    A simple table that displays a pandas dataframe without interaction
+
+    '''
+    def __init__(self, napari_viewer: 'napari.viewer.Viewer'):
+        super().__init__()
+
+    def setDataframe(self,dataframe):
+        self.clearContents()
+
+        self.dataframe = dataframe
+
+        #Fill table with content from dataframe
+        rowcount = dataframe.shape[0]
+        columncount = dataframe.shape[1]
+
+        self.setRowCount(rowcount+1)
+        self.setColumnCount(columncount)
+
+        #Header
+        for i,colnames in enumerate(dataframe.keys()):
+            self.setItem(0,i, QtWidgets.QTableWidgetItem(str(colnames)))
+        
+        #data
+        for i, colnames in enumerate(dataframe.keys()):
+            for j, value in enumerate(dataframe.get(colnames)):
+                self.setItem(j, i, QtWidgets.QTableWidgetItem(str(value)))
