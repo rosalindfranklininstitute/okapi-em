@@ -11,7 +11,7 @@
 [![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/okapi-em)](https://napari-hub.org/plugins/okapi-em)
 -->
 
-napari plugin to deal with charging artifacts in tomography electron microscopy data
+A napari plugin to deal with charging artifacts in tomography electron microscopy data
 
 ----------------------------------
 

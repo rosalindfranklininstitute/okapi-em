@@ -17,6 +17,9 @@ def getFRC(data2square):
     '''
     Calculates the FRC of the whole image
 
+    Note that this uses the miplib function directly, which has the mibplib's author calibration.
+    Avoid using this function. This is just sitting here as it may be usefule in the future.
+
     '''
     res=None
 
@@ -60,7 +63,18 @@ def getFRC(data2square):
         
     return res
 
+
 def getTiledFRC(data2d, tilesize=256):
+    '''
+    Calculates the FRC of the image by splitting it into square tiles of shape (tilesize,tilesize)
+
+    Returns: a tuple with two elements
+        dfres: a list of FRC values calculated of each tile (no coordinates though)
+        FRC heatmap: An image with same dimensions of the original image but as a tiled heatmap of the
+            FRC value in each of the tiles 
+
+    '''
+
     res=None
 
     #check data is square. If not, we may need to crop centre

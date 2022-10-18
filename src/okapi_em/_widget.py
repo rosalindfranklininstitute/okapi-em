@@ -108,9 +108,9 @@ class MainQWidget(QtWidgets.QWidget):
         # Tab with charge suppression filters
         # Contains FFT directional filter plus others
 
-        # /tabMeasChargingArtif \
-        self.tabMeasChargingArtif = QtWidgets.QWidget()
-        self.tabwidget.addTab(self.tabMeasChargingArtif, "Measure") #Measure charging artifacts
+        # # /tabMeasChargingArtif \
+        # self.tabMeasChargingArtif = QtWidgets.QWidget()
+        # self.tabwidget.addTab(self.tabMeasChargingArtif, "Measure") #Measure charging artifacts
 
 
 
@@ -210,32 +210,31 @@ class MainQWidget(QtWidgets.QWidget):
         self.t0_vbox0.addWidget(self.btnApply)
         self.btnApply.clicked.connect(self.doFFTDirFilterWhole) #Signal
 
-        self.vBox3 = QtWidgets.QVBoxLayout() #Items organised vertically
-        self.tabMeasChargingArtif.setLayout(self.vBox3 )
+        # # /tabMeasChargingArtif \
+        # self.vBox3 = QtWidgets.QVBoxLayout() #Items organised vertically
+        # self.tabMeasChargingArtif.setLayout(self.vBox3 )
+        # #Add stuff
+        # self.grpBox2 = QtWidgets.QGroupBox("Measure charging")
+        # self.vBox3.addWidget(self.grpBox2)
+        # self.grpBox2_vlayout = QtWidgets.QVBoxLayout()
+        # self.grpBox2.setLayout(self.grpBox2_vlayout)
+        # self.lbl7 = QtWidgets.QLabel("Please ensure correct data source in layer list is selected before calculation")
+        # self.lbl7.setWordWrap(True)
+        # self.grpBox2_vlayout.addWidget(self.lbl7)
+        # self.hBox2 = QtWidgets.QHBoxLayout()
+        # self.grpBox2_vlayout.addLayout( self.hBox2)
+        # self.lblMCTileSize = QtWidgets.QLabel("Tile Size")
+        # self.hBox2.addWidget(self.lblMCTileSize)
+        # self.mc_tilesize_selector = QtWidgets.QSpinBox()
+        # self.mc_tilesize_selector.setMinimum(8)
+        # self.mc_tilesize_selector.setMaximum(2048)
+        # self.mc_tilesize_selector.setValue(256)
+        # self.hBox2.addWidget(self.mc_tilesize_selector)
+        # self.btnMCCalculate = QtWidgets.QPushButton("Calculate")
+        # self.grpBox2_vlayout.addWidget(self.btnMCCalculate)
+        # self.btnMCCalculate.clicked.connect(self.btnMCCalculate_onclick) #Signal
 
-        #Add stuff
-        self.grpBox2 = QtWidgets.QGroupBox("Measure charging")
-        self.vBox3.addWidget(self.grpBox2)
-        self.grpBox2_vlayout = QtWidgets.QVBoxLayout()
-        self.grpBox2.setLayout(self.grpBox2_vlayout)
 
-        self.lbl7 = QtWidgets.QLabel("Please ensure correct data source in layer list is selected before calculation")
-        self.lbl7.setWordWrap(True)
-        self.grpBox2_vlayout.addWidget(self.lbl7)
-
-        self.hBox2 = QtWidgets.QHBoxLayout()
-        self.grpBox2_vlayout.addLayout( self.hBox2)
-        self.lblMCTileSize = QtWidgets.QLabel("Tile Size")
-        self.hBox2.addWidget(self.lblMCTileSize)
-        self.mc_tilesize_selector = QtWidgets.QSpinBox()
-        self.mc_tilesize_selector.setMinimum(8)
-        self.mc_tilesize_selector.setMaximum(2048)
-        self.mc_tilesize_selector.setValue(256)
-        self.hBox2.addWidget(self.mc_tilesize_selector)
-
-        self.btnMCCalculate = QtWidgets.QPushButton("Calculate")
-        self.grpBox2_vlayout.addWidget(self.btnMCCalculate)
-        self.btnMCCalculate.clicked.connect(self.btnMCCalculate_onclick) #Signal
 
         # /tabSliceAlignemnt \
         self.tabSliceAlignment = QtWidgets.QWidget()
@@ -258,16 +257,17 @@ class MainQWidget(QtWidgets.QWidget):
 
             self.vBox4 = QtWidgets.QVBoxLayout() #Items organised vertically
             self.tabQuoll.setLayout(self.vBox4 )
-            self.vBox4.addWidget(QtWidgets.QLabel("FRC calculations"))
-            self.btnQuollCalcFRC = QtWidgets.QPushButton("Calculate FRC (whole slice)")
-            self.vBox4.addWidget(self.btnQuollCalcFRC)
-            self.btnQuollCalcFRC.clicked.connect(self.btnQuollCalcFRC_onclick) #Signal
 
-            self.hBox4 = QtWidgets.QHBoxLayout()
-            self.vBox4.addLayout(self.hBox4)
-            self.hBox4.addWidget(QtWidgets.QLabel("Value /px"))
-            self.lblFRCWholeImg=QtWidgets.QLabel("0")
-            self.hBox4.addWidget(self.lblFRCWholeImg)
+            # self.vBox4.addWidget(QtWidgets.QLabel("FRC calculations"))
+            # self.btnQuollCalcFRC = QtWidgets.QPushButton("Calculate FRC (whole slice)")
+            # self.vBox4.addWidget(self.btnQuollCalcFRC)
+            # self.btnQuollCalcFRC.clicked.connect(self.btnQuollCalcFRC_onclick) #Signal
+
+            # self.hBox4 = QtWidgets.QHBoxLayout()
+            # self.vBox4.addLayout(self.hBox4)
+            # self.hBox4.addWidget(QtWidgets.QLabel("Value /px"))
+            # self.lblFRCWholeImg=QtWidgets.QLabel("0")
+            # self.hBox4.addWidget(self.lblFRCWholeImg)
 
             self.btnQuollCalcFRCTiled = QtWidgets.QPushButton("Calculate FRC tiled")
             self.vBox4.addWidget(self.btnQuollCalcFRCTiled)
@@ -288,8 +288,6 @@ class MainQWidget(QtWidgets.QWidget):
             self.quollTable=widget_PandasDFTable(self.viewer)
             self.quollTableContainerWidgetLayout.addWidget(self.quollTable)
 
-            #TODO: Need an object to output a pandas dataframe
-            #self.dfvQuollCalcFRCTiled = QtWidgets.Qdatafra
 
 
 
