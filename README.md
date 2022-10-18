@@ -11,7 +11,18 @@
 [![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/okapi-em)](https://napari-hub.org/plugins/okapi-em)
 -->
 
-A napari plugin to deal with charging artifacts in tomography electron microscopy data
+A napari plugin for processing serial-FIB-SEM data.
+
+Powered by:
+    - [chafer]
+    - [quoll]
+
+This napari plugin contains the following tools:
+    - Two charge artifact suppression filter
+        - directional fourier bandapass filter
+        - line-by-line filter function optimiser and subtraction (requires charge artifact labels)
+    - slice alignment using constrained SIFT
+    - FRC estimation
 
 ----------------------------------
 
@@ -29,11 +40,30 @@ https://napari.org/plugins/stable/index.html
 
 You can install `okapi-em` via [pip]:
 
-    pip install okapi-em
+    `pip install okapi-em`
 
 For development mode it can be installed by navigating to the cloned `okapi-em` folder and run:
 
-    pip install -e .
+    `pip install -e .`
+
+This should install in any machine, however ...
+
+Currently the FRC calculation provided by the [quoll] package which is optional because
+of its stringent environmemt requirements from miplib package. These currently are:
+    - python 3.7
+    - linux OS
+
+This issue will be addressed in future version.
+
+
+To install okapi-em with quoll included:
+    
+    `pip install okapi-em[all]`
+
+Note that to run napari in python 3.7 you will need to use the command:
+
+    `python -m napari`
+
 
 
 ## Contributing
@@ -50,6 +80,8 @@ Distributed under the terms of the [Apache Software License 2.0] license,
 
 If you encounter any problems, please [file an issue] along with a detailed description.
 
+[quoll]: https://github.com/rosalindfranklininstitute/quoll
+[chafer]: https://github.com/rosalindfranklininstitute/chafer
 [napari]: https://github.com/napari/napari
 [Cookiecutter]: https://github.com/audreyr/cookiecutter
 [@napari]: https://github.com/napari
@@ -61,7 +93,7 @@ If you encounter any problems, please [file an issue] along with a detailed desc
 [Mozilla Public License 2.0]: https://www.mozilla.org/media/MPL/2.0/index.txt
 [cookiecutter-napari-plugin]: https://github.com/napari/cookiecutter-napari-plugin
 
-[napari]: https://github.com/napari/napari
+
 [tox]: https://tox.readthedocs.io/en/latest/
 [pip]: https://pypi.org/project/pip/
 [PyPI]: https://pypi.org/

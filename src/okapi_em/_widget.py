@@ -1,11 +1,23 @@
-"""
-This module is an example of a barebones QWidget plugin for napari
+'''
+Copyright 2022 Rosalind Franklin Institute
 
-It implements the Widget specification.
-see: https://napari.org/plugins/stable/guides.html#widgets
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-Replace code below according to your needs.
-"""
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+'''
+
+'''
+Main napari widget with data selector and tabs with the tools
+'''
+
 #from qtpy.QtWidgets import QWidget, QHBoxLayout, QPushButton, QSlider, QSpinBox, QVBoxLayout, QLabel
 #from qtpy import QWidgets
 from qtpy import QtWidgets
