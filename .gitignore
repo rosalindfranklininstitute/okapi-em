@@ -129,3 +129,5 @@ dmypy.json
 .pyre/
 initial/2022-02-22_18_59_05_1_7_mode_0_crop4096x4096.tif
 initial/crop_data_square.ipynb
+
+*.pypirc
