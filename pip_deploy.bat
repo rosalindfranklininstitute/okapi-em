@@ -19,6 +19,8 @@ REM Deploy package to Pypi
 rem updates
 python -m pip install --upgrade setuptools wheel --user
 
+rmdir /s /q dist
+
 rem This will create two files in /dist folder: a .whl and a .tar.zip (.gz) file with the package
 pip install --upgrade build
 python -m build
