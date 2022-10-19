@@ -1,6 +1,6 @@
 # okapi-em
 
-# https://github.com/rosalindfranklininstitute/okapi-em
+https://github.com/rosalindfranklininstitute/okapi-em
 
 <!--
 [![License](https://img.shields.io/pypi/l/okapi-em.svg?color=green)](https://github.com/rosalindfranklininstitute/okapi-em/raw/main/LICENSE)
@@ -13,11 +13,10 @@
 
 A napari plugin for processing serial-FIB-SEM data.
 
-Powered by:
-    - [chafer]
-    - [quoll]
+Powered by [chafer] and [quoll].
 
-This napari plugin contains the following tools:
+This [napari] plugin contains the following tools:
+
     - Two charge artifact suppression filter
         - directional fourier bandapass filter
         - line-by-line filter function optimiser and subtraction (requires charge artifact labels)
