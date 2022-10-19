@@ -19,13 +19,13 @@ A wrapper to help using quoll for FRC calculations
 '''
 
 import numpy as np
-import quoll.frc
 import tempfile
 import tifffile
 
 #Quoll (FRC) as an optional package?
 is_quoll_available = True
 try:
+    #import quoll.frc
     from quoll.frc import oneimg
     from quoll.io import reader, tiles
 except:
