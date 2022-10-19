@@ -554,13 +554,13 @@ class MainQWidget(QtWidgets.QWidget):
                 pbr.refresh()
 
             #Show or not show Activity dialog?
-            activ_dialog=self.viewer.window._qt_viewer.window()._activity_dialog
-            activ_dialog.show()
+            #activ_dialog=self.viewer.window._qt_viewer.window()._activity_dialog #Warning this will be unavailable in the future
+            #activ_dialog.show()
 
             res= slice_alignment.align_stack(data3d, slice_alignment.ALIGNMENT_METHOD_DEFAULT,callbkfn)
             
             pbr.close()
-            activ_dialog.hide()
+            #activ_dialog.hide()
 
             if not res is None:
                 self.viewer.add_image(res, name="stack aligned")
