@@ -23,8 +23,8 @@ from . import measure_charging
 
 import numpy as np
 
-from magicgui import magicgui
-from magicgui import magic_factory
+# from magicgui import magicgui
+# from magicgui import magic_factory
 
 import chafer
 
