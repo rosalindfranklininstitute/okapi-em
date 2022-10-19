@@ -39,29 +39,30 @@ https://napari.org/plugins/stable/index.html
 
 You can install `okapi-em` via [pip]:
 
-    `pip install okapi-em`
+`pip install okapi-em`
 
 For development mode it can be installed by navigating to the cloned `okapi-em` folder and run:
 
-    `pip install -e .`
+`pip install -e .`
 
 This should install in any machine, however ...
 
 Currently the FRC calculation provided by the [quoll] package which is optional because
 of its stringent environmemt requirements from miplib package. These currently are:
-    - python 3.7
-    - linux OS
+
+- python 3.7
+- linux OS
 
 This issue will be addressed in future version.
 
 
 To install okapi-em with quoll included:
-    
-    `pip install okapi-em[all]`
+
+`pip install okapi-em[all]`
 
 Note that to run napari in python 3.7 you will need to use the command:
 
-    `python -m napari`
+`python -m napari`
 
 
 
