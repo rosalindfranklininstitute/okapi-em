@@ -69,20 +69,22 @@ class MainQWidget(QtWidgets.QWidget):
 
         # Data source Box |---|
         #Group here the controls to select data/slice
-        self.group_box0 = QtWidgets.QGroupBox("Data source")
-        #self.t0_vbox0.addWidget(self.group_box0)
-        self.layout().addWidget(self.group_box0)
+        # self.group_box0 = QtWidgets.QGroupBox("Data source")
+        # #self.t0_vbox0.addWidget(self.group_box0)
+        # self.layout().addWidget(self.group_box0)
 
-        self.group_box0_vbox0 = QtWidgets.QVBoxLayout()
-        self.group_box0.setLayout(self.group_box0_vbox0)
+        # self.group_box0_vbox0 = QtWidgets.QVBoxLayout()
+        # self.group_box0.setLayout(self.group_box0_vbox0)
 
-        self.group_box0_vbox0.addWidget(QtWidgets.QLabel("Set data source"))
-        # self.btnSetDataSourceCurrent = QtWidgets.QPushButton("Set currently selected")
-        # self.group_box0_vbox0.addWidget(self.btnSetDataSourceCurrent)
-        # self.btnSetDataSourceCurrent.clicked.connect(self.btnSetDataSourceCurrent_on_click) #Signal
+        # self.group_box0_vbox0.addWidget(QtWidgets.QLabel("Set data source"))
+        # # self.btnSetDataSourceCurrent = QtWidgets.QPushButton("Set currently selected")
+        # # self.group_box0_vbox0.addWidget(self.btnSetDataSourceCurrent)
+        # # self.btnSetDataSourceCurrent.clicked.connect(self.btnSetDataSourceCurrent_on_click) #Signal
         
-        self.w_setselect = widget_ImageSetCurrrentSelect(napari_viewer)
-        self.group_box0_vbox0.addWidget(self.w_setselect)
+        # self.w_setselect = widget_ImageSetCurrrentSelect(napari_viewer)
+        # self.group_box0_vbox0.addWidget(self.w_setselect)
+        self.w_setselect = widget_ImageSetCurrrentSelect(napari_viewer, "Data source")
+        self.layout().addWidget(self.w_setselect)
 
         # #Grid of labels to show information of data and slice selected
         # self.t0_grid0 = QtWidgets.QGridLayout()
@@ -174,7 +176,7 @@ class MainQWidget(QtWidgets.QWidget):
         self.grpBoxChaffer.setLayout(self.grpBoxChaffer_layout)
 
         #label data selector
-        self.w_setselectlabel = widget_ImageSetCurrrentSelect(napari_viewer)
+        self.w_setselectlabel = widget_ImageSetCurrrentSelect(napari_viewer, "Labels data source")
         self.grpBoxChaffer_layout.addWidget(self.w_setselectlabel)
 
         #need parameters
@@ -653,26 +655,33 @@ class widget_ImageSetCurrrentSelect(QtWidgets.QWidget):
 
     '''
 
-    def __init__(self, napari_viewer: 'napari.viewer.Viewer'):
+    def __init__(self, napari_viewer: 'napari.viewer.Viewer', header=""):
         super().__init__()
 
         self.viewer = napari_viewer #Reference to the viewer that will be needed later
         #self.viewer = napari.current_viewer() #Doesnt work, returns None
 
-        layout = QtWidgets.QGridLayout()
-        self.setLayout(layout)
+        layout0 = QtWidgets.QVBoxLayout()
+        self.setLayout(layout0)
+
+        group_box0 = QtWidgets.QGroupBox(header)
+        #self.t0_vbox0.addWidget(self.group_box0)
+        layout0.addWidget(group_box0)
+
+        gridlayout = QtWidgets.QGridLayout()
+        group_box0.setLayout(gridlayout)
 
         self.b_set = QtWidgets.QPushButton("Set currently selected")
-        layout.addWidget(self.b_set,0,0)
+        gridlayout.addWidget(self.b_set,0,0)
         self.b_set.clicked.connect(self.b_set_on_click) #Signal
   
-        layout.addWidget(QtWidgets.QLabel("name"),1,0)
+        gridlayout.addWidget(QtWidgets.QLabel("name"),1,0)
         self.l_name_v = QtWidgets.QLabel("")
-        layout.addWidget(self.l_name_v,1,1)
+        gridlayout.addWidget(self.l_name_v,1,1)
 
-        layout.addWidget(QtWidgets.QLabel("shape"),2,0)
+        gridlayout.addWidget(QtWidgets.QLabel("shape"),2,0)
         self.l_shape_v = QtWidgets.QLabel("")
-        layout.addWidget(self.l_shape_v,2,1)
+        gridlayout.addWidget(self.l_shape_v,2,1)
 
         #layout.addWidget(QtWidgets.QLabel("slicing axis"),3,0)
         self.l_slicingaxis_v = QtWidgets.QLabel("")
