@@ -174,7 +174,7 @@ class MainQWidget(QtWidgets.QWidget):
         self.grpBoxChaffer.setLayout(self.grpBoxChaffer_layout)
 
         #label data selector
-        self.w_setselectlabel = widget_ImageSetCurrentSelect(napari_viewer, "Labels data source")
+        self.w_setselectlabel = widget_ImageSetCurrentSelect(self.viewer, "Labels data source")
         self.grpBoxChaffer_layout.addWidget(self.w_setselectlabel)
 
         #need parameters
@@ -228,10 +228,35 @@ class MainQWidget(QtWidgets.QWidget):
         self.tabwidget.addTab(self.tabSliceAlignment, "Slice Alignment")
         self.tabSliceAlignment_l = QtWidgets.QVBoxLayout() #Items organised vertically
         self.tabSliceAlignment.setLayout(self.tabSliceAlignment_l)
+        
+        self.chkbxTranslate= QtWidgets.QCheckBox("Translate")
+        self.tabSliceAlignment_l.addWidget(self.chkbxTranslate)
+        self.chkbxAffine= QtWidgets.QCheckBox("Linear all free (ov. below)")
+        self.tabSliceAlignment_l.addWidget(self.chkbxAffine)
+
+        hl_Rot = QtWidgets.QHBoxLayout()
+        self.tabSliceAlignment_l.addLayout(hl_Rot)
+        self.chkbxRotation = QtWidgets.QCheckBox("rotation (ov. shear)")
+        hl_Rot.addWidget(self.chkbxRotation)
+        self.chkbxShearX = QtWidgets.QCheckBox("shear X")
+        hl_Rot.addWidget(self.chkbxShearX)
+        self.chkbxShearY = QtWidgets.QCheckBox("shear Y")
+        hl_Rot.addWidget(self.chkbxShearY)
+
+        hl_Scaling = QtWidgets.QHBoxLayout()
+        self.tabSliceAlignment_l.addLayout(hl_Scaling)
+        self.chkbxScaling = QtWidgets.QCheckBox("scaling (ov. stretch)")
+        hl_Scaling.addWidget(self.chkbxScaling)
+        self.chkbxStretchX = QtWidgets.QCheckBox("stretch x")
+        hl_Scaling.addWidget(self.chkbxStretchX)
+        self.chkbxStretchY = QtWidgets.QCheckBox("stretch y")
+        hl_Scaling.addWidget(self.chkbxStretchY)
+
         #Button to start the alignement
         self.btnSACalculate = QtWidgets.QPushButton("Align")
         self.tabSliceAlignment_l.addWidget(self.btnSACalculate)
         self.btnSACalculate.clicked.connect(self.btnSACalculate_onclick) #Signal
+
 
     def ui_do_tab_Quoll(self):
         # /tabQuoll \
