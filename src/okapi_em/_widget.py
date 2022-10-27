@@ -83,7 +83,7 @@ class MainQWidget(QtWidgets.QWidget):
         
         # self.w_setselect = widget_ImageSetCurrrentSelect(napari_viewer)
         # self.group_box0_vbox0.addWidget(self.w_setselect)
-        self.w_setselect = widget_ImageSetCurrrentSelect(napari_viewer, "Data source")
+        self.w_setselect = widget_ImageSetCurrentSelect(napari_viewer, "Data source")
         self.layout().addWidget(self.w_setselect)
 
         # #Grid of labels to show information of data and slice selected
@@ -115,18 +115,16 @@ class MainQWidget(QtWidgets.QWidget):
         #self.t0_vbox0.addWidget(self.tabwidget)
 
         #Create all tabs here
-        
+        self.ui_do_tab_ChargeSuppression()
+        self.ui_do_tab_SliceAlignment()
+        self.ui_do_tab_Quoll()
+
+    def ui_do_tab_ChargeSuppression(self):
         # /tabChargeSuppr \ t0_vbox0
         self.tabChargeSuppr = QtWidgets.QWidget()
         self.tabwidget.addTab(self.tabChargeSuppr, "C-Suppression")
         # Tab with charge suppression filters
         # Contains FFT directional filter plus others
-
-        # # /tabMeasChargingArtif \
-        # self.tabMeasChargingArtif = QtWidgets.QWidget()
-        # self.tabwidget.addTab(self.tabMeasChargingArtif, "Measure") #Measure charging artifacts
-
-
 
         self.t0_vbox0 = QtWidgets.QVBoxLayout() #Items organised vertically
         self.tabChargeSuppr.setLayout(self.t0_vbox0)
@@ -176,7 +174,7 @@ class MainQWidget(QtWidgets.QWidget):
         self.grpBoxChaffer.setLayout(self.grpBoxChaffer_layout)
 
         #label data selector
-        self.w_setselectlabel = widget_ImageSetCurrrentSelect(napari_viewer, "Labels data source")
+        self.w_setselectlabel = widget_ImageSetCurrentSelect(napari_viewer, "Labels data source")
         self.grpBoxChaffer_layout.addWidget(self.w_setselectlabel)
 
         #need parameters
@@ -224,32 +222,7 @@ class MainQWidget(QtWidgets.QWidget):
         self.t0_vbox0.addWidget(self.btnApply)
         self.btnApply.clicked.connect(self.doFFTDirFilterWhole) #Signal
 
-        # # /tabMeasChargingArtif \
-        # self.vBox3 = QtWidgets.QVBoxLayout() #Items organised vertically
-        # self.tabMeasChargingArtif.setLayout(self.vBox3 )
-        # #Add stuff
-        # self.grpBox2 = QtWidgets.QGroupBox("Measure charging")
-        # self.vBox3.addWidget(self.grpBox2)
-        # self.grpBox2_vlayout = QtWidgets.QVBoxLayout()
-        # self.grpBox2.setLayout(self.grpBox2_vlayout)
-        # self.lbl7 = QtWidgets.QLabel("Please ensure correct data source in layer list is selected before calculation")
-        # self.lbl7.setWordWrap(True)
-        # self.grpBox2_vlayout.addWidget(self.lbl7)
-        # self.hBox2 = QtWidgets.QHBoxLayout()
-        # self.grpBox2_vlayout.addLayout( self.hBox2)
-        # self.lblMCTileSize = QtWidgets.QLabel("Tile Size")
-        # self.hBox2.addWidget(self.lblMCTileSize)
-        # self.mc_tilesize_selector = QtWidgets.QSpinBox()
-        # self.mc_tilesize_selector.setMinimum(8)
-        # self.mc_tilesize_selector.setMaximum(2048)
-        # self.mc_tilesize_selector.setValue(256)
-        # self.hBox2.addWidget(self.mc_tilesize_selector)
-        # self.btnMCCalculate = QtWidgets.QPushButton("Calculate")
-        # self.grpBox2_vlayout.addWidget(self.btnMCCalculate)
-        # self.btnMCCalculate.clicked.connect(self.btnMCCalculate_onclick) #Signal
-
-
-
+    def ui_do_tab_SliceAlignment(self):
         # /tabSliceAlignemnt \
         self.tabSliceAlignment = QtWidgets.QWidget()
         self.tabwidget.addTab(self.tabSliceAlignment, "Slice Alignment")
@@ -260,11 +233,8 @@ class MainQWidget(QtWidgets.QWidget):
         self.tabSliceAlignment_l.addWidget(self.btnSACalculate)
         self.btnSACalculate.clicked.connect(self.btnSACalculate_onclick) #Signal
 
-
-
-
+    def ui_do_tab_Quoll(self):
         # /tabQuoll \
-        
         if quoll.is_quoll_available:
             self.tabQuoll = QtWidgets.QWidget()
             self.tabwidget.addTab(self.tabQuoll, "Quoll")
@@ -296,16 +266,12 @@ class MainQWidget(QtWidgets.QWidget):
             qgrid3_layout.addWidget(self.spbQuolTileSize, 0,1)
             self.quollTableContainerWidget=QtWidgets.QWidget()
             qgrid3_layout.addWidget(self.quollTableContainerWidget)
-            #TODO add basic widget to self.quollTableContainerWidget so that table can be added
+            
+            #table with infomation
             self.quollTableContainerWidgetLayout=QtWidgets.QVBoxLayout()
             self.quollTableContainerWidget.setLayout(self.quollTableContainerWidgetLayout)
             self.quollTable=widget_PandasDFTable(self.viewer)
             self.quollTableContainerWidgetLayout.addWidget(self.quollTable)
-
-
-
-
-
 
 
     def freqselector_high_valueChanged(self):
@@ -647,7 +613,7 @@ class MainQWidget(QtWidgets.QWidget):
 
 
 
-class widget_ImageSetCurrrentSelect(QtWidgets.QWidget):
+class widget_ImageSetCurrentSelect(QtWidgets.QWidget):
     '''
     A QtWidget that helps select Image data for further processing
 
