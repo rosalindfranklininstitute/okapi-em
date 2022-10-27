@@ -217,29 +217,75 @@ def findInitialandBounds(method, margin_t=200, margin_a=0.01):
     return t0, bounds
 
 class affineTransform():
+    '''
+    Class with for affine transforms,
+    typically a matrix for rotation and/or skewing
+    and a translation.
+
+    Contains functions to do operations with these matrices
+    '''
     def __init__(self,lintransf, transltransf):
+        '''
+        Args:
+            lintransf: a 2x2 numpy matrix with the rotation/skewing values
+            transltransf: translation values in matrix with 2 in format [x,y] 
+        
+        '''
         self.lintransf = lintransf.copy()
         self.transltransf= transltransf.copy()
     
     @staticmethod
     def from2x3mat(mat):
+        '''
+        Creates a affineTransform object from a 2x3 matrix. It is a constructor type of function.
+        Args:
+            mat: a 2x3 matrix with the linear transform in the first two columns
+                and the translation in the last column
+        Returns:
+            a new affineTransform object
+        '''
         lintransf = mat[:, :2].astype(np.float32)
         transltransf = mat[:, 2].astype(np.float32)
         return affineTransform(lintransf, transltransf)
-    
+
+    def getAffTransfAs3x2mat(self):
+        '''
+        Gets a 2x3 matrix numpy of this affineTranform object.
+        Returns:
+            a numpy array 2x3, with the linear transform in the first two columns
+                and the translation in the last column
+        '''
+        mat = np.column_stack((self.lintransf,self.transltransf))
+        return mat
+
     def accumulate(self, affinetransform2):
+        '''
+        Accumulates affine transforms.
+        This is not a multiplication or addition.
+        In practice, the linear transform is multiplied and the translation is added.
+        Args:
+            affinetransform2, affine transform to accumulate
+        '''
         lintransf_res = np.matmul( self.lintransf, affinetransform2.lintransf)
         transltransf_res = self.transltransf + affinetransform2.transltransf
         return affineTransform(lintransf_res, transltransf_res)
     
-    def getAffTransfAs3x2mat(self):
-        mat = np.column_stack((self.lintransf,self.transltransf))
-        return mat
-    
+
     def addTransl(self, transl):
+        '''
+        Adds a translation [x,y] to the this affineTransform object
+        '''
         self.transltransf+=transl
 
     def applyToPoint(self,point):
+        '''
+        Applies this affineTransformation to a point/vector
+        Args:
+            point: coordinates in format (x,y)
+
+        Returns:
+            a new point (xr,yr) that is the tranformed of [x,y]
+        '''
         #point being (x,y)
         x0,y0= point
 
@@ -249,6 +295,9 @@ class affineTransform():
         return x1,y1
     
     def copy(self):
+        '''
+        Makes a copy of itself
+        '''
         return affineTransform(self.lintransf, self.transltransf)
 
 
@@ -256,22 +305,22 @@ def align_stack(image_sequence, method, callbk_tick_fn=None):
     '''
     Aligns a 3D stack along the z-axis using the SIFT aligment method.
 
-    Parameters:
+    Args:
         image_sequence: a 3D numpy array with the images (greyscale) to be aligned along the X plane
 
-    method: a dictionary that sets the alignement method, like following:
-        'translation':True,
-        'rotation':False, 'shearing_x':True, 'shearing_y':False,
-        'scaling':False, 'stretching_x':False, 'stretching_y':True, 
-        'affine':False 
+        method: a dictionary that sets the alignement method, like following:
+            'translation':True,
+            'rotation':False, 'shearing_x':True, 'shearing_y':False,
+            'scaling':False, 'stretching_x':False, 'stretching_y':True, 
+            'affine':False 
 
-        'translation' Can be overriden by affine setting below
-        Either 'rotation', 'shearing_x' or 'shearing_y' . If rotation is true the shearings are ignored
-        Either 'scaling', 'stretching_x' or 'stretching_y'. If scaling is true, the stretchings are ignored
-        'affine'. This setting mean that all parameters in the affine matrix are free to be optimized for alignement.
-                If affine is true all the others are ignored.
+            'translation' Can be overriden by affine setting below
+            Either 'rotation', 'shearing_x' or 'shearing_y' . If rotation is true the shearings are ignored
+            Either 'scaling', 'stretching_x' or 'stretching_y'. If scaling is true, the stretchings are ignored
+            'affine'. This setting mean that all parameters in the affine matrix are free to be optimized for alignement.
+                    If affine is true all the others are ignored.
     
-    callbk_tick_fn: call back function that will be called between iterations
+        callbk_tick_fn: call back function that will be called between iterations
 
     Returns:
         The 3D stack aligned data.
@@ -328,7 +377,7 @@ def align_stack(image_sequence, method, callbk_tick_fn=None):
             #Use last one calculated
             #T1 = mats[-1].copy()
 
-        mats.append(T1)
+        mats.append(T1) #Stores affine transform, it will be applied later
 
         if not callbk_tick_fn is None:
             callbk_tick_fn()
@@ -343,7 +392,7 @@ def align_stack(image_sequence, method, callbk_tick_fn=None):
         mat_accum.append(mat1)
         mat0=mat1
     
-    print('Completed calculation of accumalation transform matrices.')
+    print('Completed calculation of accumulation transform matrices.')
 
     if not callbk_tick_fn is None:
             callbk_tick_fn()
@@ -360,8 +409,12 @@ def align_stack(image_sequence, method, callbk_tick_fn=None):
         
         before_points = np.float32([[0, 0], [0, width], [length, width], [length, 0]]).reshape(-1, 1, 2)
         #after_points = cv.transform(before_points, T)
-        after_points = cv.transform(before_points, T.getAffTransfAs3x2mat() )
+        after_points = cv.transform(before_points, T.getAffTransfAs3x2mat() ) #  we may not need the cv.transform but we can maybe use the applyToPoint function
         
+        #LMAP: I am not really sure what is going on below
+        # It appears that list_of_points is being assigned values like before_points
+        # and then a new dimension added to include after_points
+        # Nevertheles: it appears to be working, for the next step
         list_of_points = np.float32([[0, 0], [0, width], [length, width], [length, 0]]).reshape(-1, 1, 2)
         list_of_points = np.append(list_of_points, after_points, axis=0)
         
@@ -383,7 +436,6 @@ def align_stack(image_sequence, method, callbk_tick_fn=None):
 
     translation_distT = [-x_min, -y_min]
     print(f'translation_distT:{translation_distT} , need to be added to the transform')
-    
 
     
     for i0 in range(len(mat_accum)):
