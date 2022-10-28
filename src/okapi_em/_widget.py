@@ -548,8 +548,20 @@ class MainQWidget(QtWidgets.QWidget):
             #activ_dialog=self.viewer.window._qt_viewer.window()._activity_dialog #Warning this will be unavailable in the future
             #activ_dialog.show()
 
-            res= slice_alignment.align_stack(data3d, slice_alignment.ALIGNMENT_METHOD_DEFAULT,callbkfn)
-            
+            #res= slice_alignment.align_stack(data3d, slice_alignment.ALIGNMENT_METHOD_DEFAULT,callbkfn)
+            sa_method = slice_alignment.ALIGNMENT_METHOD_DEFAULT
+
+            sa_method['translation'] = self.chkbxTranslate.isChecked()
+            sa_method['affine'] = self.chkbxAffine.isChecked()
+            sa_method['rotation'] = self.chkbxRotation.isChecked()
+            sa_method['shearing_x'] = self.chkbxShearX.isChecked()
+            sa_method['shearing_y'] = self.chkbxShearY.isChecked()
+            sa_method['scaling'] = self.chkbxScaling.isChecked()
+            sa_method['stretching_x'] = self.chkbxStretchX.isChecked()
+            sa_method['stretching_y'] = self.chkbxStretchY.isChecked()
+
+            res= slice_alignment.align_stack(data3d, sa_method,callbkfn)
+
             pbr.close()
             #activ_dialog.hide()
 
