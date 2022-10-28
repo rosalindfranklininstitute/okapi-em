@@ -534,6 +534,9 @@ class MainQWidget(QtWidgets.QWidget):
 
         if data3d.ndim==3:
 
+            #Ensure data3d is napari and not dask
+            data3d = np.array(data3d)
+            
             #Estimate number of iterations for progress bar
             nslices = data3d.shape[0]
             niterations = 2*(nslices+1)
