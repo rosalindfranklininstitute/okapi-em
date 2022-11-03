@@ -226,6 +226,7 @@ class MainQWidget(QWidget):
         self.tabSliceAlignment.setLayout(self.tabSliceAlignment_l)
         
         self.chkbxTranslate= QCheckBox("Translate")
+        self.chkbxTranslate.setChecked(True)
         self.tabSliceAlignment_l.addWidget(self.chkbxTranslate)
         self.chkbxAffine= QCheckBox("Linear all free (ov. below)")
         self.tabSliceAlignment_l.addWidget(self.chkbxAffine)
@@ -235,6 +236,7 @@ class MainQWidget(QWidget):
         self.chkbxRotation = QCheckBox("rotation (ov. shear)")
         hl_Rot.addWidget(self.chkbxRotation)
         self.chkbxShearX = QCheckBox("shear X")
+        self.chkbxShearX.setChecked(True)
         hl_Rot.addWidget(self.chkbxShearX)
         self.chkbxShearY = QCheckBox("shear Y")
         hl_Rot.addWidget(self.chkbxShearY)
@@ -247,6 +249,7 @@ class MainQWidget(QWidget):
         hl_Scaling.addWidget(self.chkbxStretchX)
         self.chkbxStretchY = QCheckBox("stretch y")
         hl_Scaling.addWidget(self.chkbxStretchY)
+        self.chkbxStretchY.setChecked(True)
 
         #Button to start the alignement
         self.btnSACalculate = QPushButton("Align")
