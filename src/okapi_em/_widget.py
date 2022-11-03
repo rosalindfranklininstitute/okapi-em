@@ -18,13 +18,9 @@ limitations under the License.
 Main napari widget with data selector and tabs with the tools
 '''
 
-#from qtpy.QtWidgets import QWidget, QHBoxLayout, QPushButton, QSlider, QSpinBox, QVBoxLayout, QLabel
-#from qtpy import QWidgets
-from qtpy import QtWidgets
-
-#from qtpy.QtCore import Qt
-#from napari._qt.widgets.qt_range_slider import QHRangeSlider
-#from superqt import QRangeSlider
+#from qtpy import QtWidgets
+from qtpy.QtWidgets import QWidget, QTabWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox, QGridLayout
+from qtpy.QtWidgets import QRadioButton, QCheckBox,QPushButton, QLabel,QSpinBox, QTableWidget, QTableWidgetItem
 
 import napari
 from napari.types import ImageData, LayerDataTuple
@@ -44,7 +40,7 @@ from . import quoll_wrapper as quoll
 
 from . import slice_alignment
 
-class MainQWidget(QtWidgets.QWidget):
+class MainQWidget(QWidget):
     # Sets the main window of the widget
     # laying out all controls and doing relevant connections between elements and code
 
@@ -60,24 +56,24 @@ class MainQWidget(QtWidgets.QWidget):
         print(f"napari_viewer: {napari_viewer}")
 
         #layout = QVBoxLayout()
-        self.setLayout(QtWidgets.QVBoxLayout())
+        self.setLayout(QVBoxLayout())
 
-        #self.t0_vbox0 = QtWidgets.QVBoxLayout() #Items organised vertically
+        #self.t0_vbox0 = QVBoxLayout() #Items organised vertically
         # self.tabChargeSuppr.addWidget( self.t0_vbox0 )
         #self.tabChargeSuppr.setLayout(self.t0_vbox0 )
         #self.layout().addWidget(self.t0_vbox0)
 
         # Data source Box |---|
         #Group here the controls to select data/slice
-        # self.group_box0 = QtWidgets.QGroupBox("Data source")
+        # self.group_box0 = QGroupBox("Data source")
         # #self.t0_vbox0.addWidget(self.group_box0)
         # self.layout().addWidget(self.group_box0)
 
-        # self.group_box0_vbox0 = QtWidgets.QVBoxLayout()
+        # self.group_box0_vbox0 = QVBoxLayout()
         # self.group_box0.setLayout(self.group_box0_vbox0)
 
-        # self.group_box0_vbox0.addWidget(QtWidgets.QLabel("Set data source"))
-        # # self.btnSetDataSourceCurrent = QtWidgets.QPushButton("Set currently selected")
+        # self.group_box0_vbox0.addWidget(QLabel("Set data source"))
+        # # self.btnSetDataSourceCurrent = QPushButton("Set currently selected")
         # # self.group_box0_vbox0.addWidget(self.btnSetDataSourceCurrent)
         # # self.btnSetDataSourceCurrent.clicked.connect(self.btnSetDataSourceCurrent_on_click) #Signal
         
@@ -87,29 +83,29 @@ class MainQWidget(QtWidgets.QWidget):
         self.layout().addWidget(self.w_setselect)
 
         # #Grid of labels to show information of data and slice selected
-        # self.t0_grid0 = QtWidgets.QGridLayout()
+        # self.t0_grid0 = QGridLayout()
         # self.group_box0_vbox0.addLayout( self.t0_grid0)
 
-        # self.label3 = QtWidgets.QLabel("layer:")
+        # self.label3 = QLabel("layer:")
         # self.t0_grid0.addWidget(self.label3, 0,0)
-        # self.labelSelLayerName = QtWidgets.QLabel("")
+        # self.labelSelLayerName = QLabel("")
         # self.t0_grid0.addWidget(self.labelSelLayerName, 0,1)
-        # self.label4 = QtWidgets.QLabel("nslice:")
+        # self.label4 = QLabel("nslice:")
         # self.t0_grid0.addWidget(self.label4, 1,0)
-        # self.labelSelNSlice = QtWidgets.QLabel("")
+        # self.labelSelNSlice = QLabel("")
         # self.t0_grid0.addWidget(self.labelSelNSlice, 1,1)
-        # self.label5 = QtWidgets.QLabel("slicing axis:")
+        # self.label5 = QLabel("slicing axis:")
         # self.t0_grid0.addWidget(self.label5, 2,0)
-        # self.labelSlicingAxis = QtWidgets.QLabel("")
+        # self.labelSlicingAxis = QLabel("")
         # self.t0_grid0.addWidget(self.labelSlicingAxis, 2,1)
-        # self.label6 = QtWidgets.QLabel("data slice shape:")
+        # self.label6 = QLabel("data slice shape:")
         # self.t0_grid0.addWidget(self.label6, 3,0)
-        # self.labelSliceDims = QtWidgets.QLabel("")
+        # self.labelSliceDims = QLabel("")
         # self.t0_grid0.addWidget(self.labelSliceDims, 3,1)
         # Data Source Box |___| end
 
         #Put a tab widget that will help select operations
-        self.tabwidget = QtWidgets.QTabWidget()
+        self.tabwidget = QTabWidget()
         self.layout().addWidget(self.tabwidget)
         # and set its layout as vertical
         #self.t0_vbox0.addWidget(self.tabwidget)
@@ -121,43 +117,43 @@ class MainQWidget(QtWidgets.QWidget):
 
     def ui_do_tab_ChargeSuppression(self):
         # /tabChargeSuppr \ t0_vbox0
-        self.tabChargeSuppr = QtWidgets.QWidget()
+        self.tabChargeSuppr = QWidget()
         self.tabwidget.addTab(self.tabChargeSuppr, "C-Suppression")
         # Tab with charge suppression filters
         # Contains FFT directional filter plus others
 
-        self.t0_vbox0 = QtWidgets.QVBoxLayout() #Items organised vertically
+        self.t0_vbox0 = QVBoxLayout() #Items organised vertically
         self.tabChargeSuppr.setLayout(self.t0_vbox0)
 
         # Filter: Directional band-pass
         # Radiobutton followed by a box with controls for this filter
-        self.rbDirFFT = QtWidgets.QRadioButton("Directional band-pass FFT filter")
+        self.rbDirFFT = QRadioButton("Directional band-pass FFT filter")
         self.rbDirFFT.setChecked(True)
         self.t0_vbox0.addWidget( self.rbDirFFT)
         #TODO, may need 'connection'
         #Options for this filter are contained in the next box grpBox1
-        self.grpBox1 = QtWidgets.QGroupBox("") #Box, no title, radiobutton does it
+        self.grpBox1 = QGroupBox("") #Box, no title, radiobutton does it
         #self.tabChargeSuppr.addWidget(self.grpBox1)
         self.t0_vbox0.addWidget(self.grpBox1)
 
-        self.vbox2 = QtWidgets.QVBoxLayout()
+        self.vbox2 = QVBoxLayout()
         self.grpBox1.setLayout(self.vbox2)
-        self.label1 = QtWidgets.QLabel("Select cutoff frequencies")
+        self.label1 = QLabel("Select cutoff frequencies")
         self.vbox2.addWidget(self.label1)
-        self.t0_hbox = QtWidgets.QHBoxLayout() #Horizontal layout to set low and high freq of filters
+        self.t0_hbox = QHBoxLayout() #Horizontal layout to set low and high freq of filters
         self.vbox2.addLayout( self.t0_hbox)
-        self.label_low = QtWidgets.QLabel("low:")
+        self.label_low = QLabel("low:")
         self.t0_hbox.addWidget(self.label_low)
-        self.freqselector_low = QtWidgets.QSpinBox()
+        self.freqselector_low = QSpinBox()
         self.freqselector_low.setMinimum(0)
         self.freqselector_low.setMaximum(100)
         self.freqselector_low.setValue(0)
         self.freqselector_low.setSingleStep(1)
         self.t0_hbox.addWidget(self.freqselector_low)
         self.freqselector_low.valueChanged.connect(self.freqselector_low_valueChanged)
-        self.label_high = QtWidgets.QLabel("high:")
+        self.label_high = QLabel("high:")
         self.t0_hbox.addWidget(self.label_high)
-        self.freqselector_high = QtWidgets.QSpinBox()
+        self.freqselector_high = QSpinBox()
         self.freqselector_high.setMinimum(0)
         self.freqselector_high.setMaximum(100)
         self.freqselector_high.setValue(5)
@@ -165,12 +161,12 @@ class MainQWidget(QtWidgets.QWidget):
         self.t0_hbox.addWidget(self.freqselector_high)
         self.freqselector_high.valueChanged.connect(self.freqselector_high_valueChanged)
 
-        self.rbChaffer = QtWidgets.QRadioButton("Chaffer")
+        self.rbChaffer = QRadioButton("Chaffer")
         self.rbChaffer.setChecked(False)
         self.t0_vbox0.addWidget(self.rbChaffer)
-        self.grpBoxChaffer = QtWidgets.QGroupBox("")
+        self.grpBoxChaffer = QGroupBox("")
         self.t0_vbox0.addWidget(self.grpBoxChaffer) #Add chaffer UI to this grpBoxChaffer
-        self.grpBoxChaffer_layout = QtWidgets.QVBoxLayout()
+        self.grpBoxChaffer_layout = QVBoxLayout()
         self.grpBoxChaffer.setLayout(self.grpBoxChaffer_layout)
 
         #label data selector
@@ -182,25 +178,25 @@ class MainQWidget(QtWidgets.QWidget):
         #data_fit_max_length_edge_px = 700,
         #data_fit_min_length_px = 50
 
-        qgrid2_layout = QtWidgets.QGridLayout()
+        qgrid2_layout = QGridLayout()
         self.grpBoxChaffer_layout.addLayout(qgrid2_layout)
 
-        qgrid2_layout.addWidget( QtWidgets.QLabel("nlinesaverage") ,0,0)
-        self.chafer_widg_nlines = QtWidgets.QSpinBox()
+        qgrid2_layout.addWidget( QLabel("nlinesaverage") ,0,0)
+        self.chafer_widg_nlines = QSpinBox()
         self.chafer_widg_nlines.setMinimum(1)
         self.chafer_widg_nlines.setMaximum(65536)
         self.chafer_widg_nlines.setValue(20)
         qgrid2_layout.addWidget( self.chafer_widg_nlines ,0,1)
 
-        qgrid2_layout.addWidget( QtWidgets.QLabel("fit length min px") ,1,0)
-        self.chafer_widg_minlength = QtWidgets.QSpinBox()
+        qgrid2_layout.addWidget( QLabel("fit length min px") ,1,0)
+        self.chafer_widg_minlength = QSpinBox()
         self.chafer_widg_minlength.setMinimum(1)
         self.chafer_widg_minlength.setMaximum(65536)
         self.chafer_widg_minlength.setValue(50)
         qgrid2_layout.addWidget( self.chafer_widg_minlength ,1,1)
 
-        qgrid2_layout.addWidget( QtWidgets.QLabel("fit length max px") ,2,0)
-        self.chafer_widg_maxlength = QtWidgets.QSpinBox()
+        qgrid2_layout.addWidget( QLabel("fit length max px") ,2,0)
+        self.chafer_widg_maxlength = QSpinBox()
         self.chafer_widg_maxlength.setMinimum(1)
         self.chafer_widg_maxlength.setMaximum(65536)
         self.chafer_widg_maxlength.setValue(700)
@@ -214,46 +210,46 @@ class MainQWidget(QtWidgets.QWidget):
         #Need select source file,
         #Need user to select labels file
 
-        self.btnFFTDirFilterSlice = QtWidgets.QPushButton("Filter (slice)")
+        self.btnFFTDirFilterSlice = QPushButton("Filter (slice)")
         self.t0_vbox0.addWidget(self.btnFFTDirFilterSlice)
         self.btnFFTDirFilterSlice.clicked.connect(self.doFFTDirFilterSlice)
 
-        self.btnApply = QtWidgets.QPushButton("Filter")
+        self.btnApply = QPushButton("Filter")
         self.t0_vbox0.addWidget(self.btnApply)
         self.btnApply.clicked.connect(self.doFFTDirFilterWhole) #Signal
 
     def ui_do_tab_SliceAlignment(self):
         # /tabSliceAlignemnt \
-        self.tabSliceAlignment = QtWidgets.QWidget()
+        self.tabSliceAlignment = QWidget()
         self.tabwidget.addTab(self.tabSliceAlignment, "Slice Alignment")
-        self.tabSliceAlignment_l = QtWidgets.QVBoxLayout() #Items organised vertically
+        self.tabSliceAlignment_l = QVBoxLayout() #Items organised vertically
         self.tabSliceAlignment.setLayout(self.tabSliceAlignment_l)
         
-        self.chkbxTranslate= QtWidgets.QCheckBox("Translate")
+        self.chkbxTranslate= QCheckBox("Translate")
         self.tabSliceAlignment_l.addWidget(self.chkbxTranslate)
-        self.chkbxAffine= QtWidgets.QCheckBox("Linear all free (ov. below)")
+        self.chkbxAffine= QCheckBox("Linear all free (ov. below)")
         self.tabSliceAlignment_l.addWidget(self.chkbxAffine)
 
-        hl_Rot = QtWidgets.QHBoxLayout()
+        hl_Rot = QHBoxLayout()
         self.tabSliceAlignment_l.addLayout(hl_Rot)
-        self.chkbxRotation = QtWidgets.QCheckBox("rotation (ov. shear)")
+        self.chkbxRotation = QCheckBox("rotation (ov. shear)")
         hl_Rot.addWidget(self.chkbxRotation)
-        self.chkbxShearX = QtWidgets.QCheckBox("shear X")
+        self.chkbxShearX = QCheckBox("shear X")
         hl_Rot.addWidget(self.chkbxShearX)
-        self.chkbxShearY = QtWidgets.QCheckBox("shear Y")
+        self.chkbxShearY = QCheckBox("shear Y")
         hl_Rot.addWidget(self.chkbxShearY)
 
-        hl_Scaling = QtWidgets.QHBoxLayout()
+        hl_Scaling = QHBoxLayout()
         self.tabSliceAlignment_l.addLayout(hl_Scaling)
-        self.chkbxScaling = QtWidgets.QCheckBox("scaling (ov. stretch)")
+        self.chkbxScaling = QCheckBox("scaling (ov. stretch)")
         hl_Scaling.addWidget(self.chkbxScaling)
-        self.chkbxStretchX = QtWidgets.QCheckBox("stretch x")
+        self.chkbxStretchX = QCheckBox("stretch x")
         hl_Scaling.addWidget(self.chkbxStretchX)
-        self.chkbxStretchY = QtWidgets.QCheckBox("stretch y")
+        self.chkbxStretchY = QCheckBox("stretch y")
         hl_Scaling.addWidget(self.chkbxStretchY)
 
         #Button to start the alignement
-        self.btnSACalculate = QtWidgets.QPushButton("Align")
+        self.btnSACalculate = QPushButton("Align")
         self.tabSliceAlignment_l.addWidget(self.btnSACalculate)
         self.btnSACalculate.clicked.connect(self.btnSACalculate_onclick) #Signal
 
@@ -261,39 +257,39 @@ class MainQWidget(QtWidgets.QWidget):
     def ui_do_tab_Quoll(self):
         # /tabQuoll \
         if quoll.is_quoll_available:
-            self.tabQuoll = QtWidgets.QWidget()
+            self.tabQuoll = QWidget()
             self.tabwidget.addTab(self.tabQuoll, "Quoll")
 
-            self.vBox4 = QtWidgets.QVBoxLayout() #Items organised vertically
+            self.vBox4 = QVBoxLayout() #Items organised vertically
             self.tabQuoll.setLayout(self.vBox4 )
 
-            # self.vBox4.addWidget(QtWidgets.QLabel("FRC calculations"))
-            # self.btnQuollCalcFRC = QtWidgets.QPushButton("Calculate FRC (whole slice)")
+            # self.vBox4.addWidget(QLabel("FRC calculations"))
+            # self.btnQuollCalcFRC = QPushButton("Calculate FRC (whole slice)")
             # self.vBox4.addWidget(self.btnQuollCalcFRC)
             # self.btnQuollCalcFRC.clicked.connect(self.btnQuollCalcFRC_onclick) #Signal
 
-            # self.hBox4 = QtWidgets.QHBoxLayout()
+            # self.hBox4 = QHBoxLayout()
             # self.vBox4.addLayout(self.hBox4)
-            # self.hBox4.addWidget(QtWidgets.QLabel("Value /px"))
-            # self.lblFRCWholeImg=QtWidgets.QLabel("0")
+            # self.hBox4.addWidget(QLabel("Value /px"))
+            # self.lblFRCWholeImg=QLabel("0")
             # self.hBox4.addWidget(self.lblFRCWholeImg)
 
-            self.btnQuollCalcFRCTiled = QtWidgets.QPushButton("Calculate FRC tiled")
+            self.btnQuollCalcFRCTiled = QPushButton("Calculate FRC tiled")
             self.vBox4.addWidget(self.btnQuollCalcFRCTiled)
             self.btnQuollCalcFRCTiled.clicked.connect(self.btnQuollCalcFRCTiled_onclick) #Signal
-            qgrid3_layout = QtWidgets.QGridLayout()
+            qgrid3_layout = QGridLayout()
             self.vBox4.addLayout(qgrid3_layout)
-            qgrid3_layout.addWidget(QtWidgets.QLabel("tile size (px):"),0,0)
-            self.spbQuolTileSize = QtWidgets.QSpinBox()
+            qgrid3_layout.addWidget(QLabel("tile size (px):"),0,0)
+            self.spbQuolTileSize = QSpinBox()
             self.spbQuolTileSize.setMinimum(8)
             self.spbQuolTileSize.setMaximum(10000)
             self.spbQuolTileSize.setValue(256)
             qgrid3_layout.addWidget(self.spbQuolTileSize, 0,1)
-            self.quollTableContainerWidget=QtWidgets.QWidget()
+            self.quollTableContainerWidget=QWidget()
             qgrid3_layout.addWidget(self.quollTableContainerWidget)
             
             #table with infomation
-            self.quollTableContainerWidgetLayout=QtWidgets.QVBoxLayout()
+            self.quollTableContainerWidgetLayout=QVBoxLayout()
             self.quollTableContainerWidget.setLayout(self.quollTableContainerWidgetLayout)
             self.quollTable=widget_PandasDFTable(self.viewer)
             self.quollTableContainerWidgetLayout.addWidget(self.quollTable)
@@ -536,7 +532,7 @@ class MainQWidget(QtWidgets.QWidget):
 
             #Ensure data3d is napari and not dask
             data3d = np.array(data3d)
-            
+
             #Estimate number of iterations for progress bar
             nslices = data3d.shape[0]
             niterations = 2*(nslices+1)
@@ -653,7 +649,7 @@ class MainQWidget(QtWidgets.QWidget):
 
 
 
-class widget_ImageSetCurrentSelect(QtWidgets.QWidget):
+class widget_ImageSetCurrentSelect(QWidget):
     '''
     A QtWidget that helps select Image data for further processing
 
@@ -667,41 +663,41 @@ class widget_ImageSetCurrentSelect(QtWidgets.QWidget):
         self.viewer = napari_viewer #Reference to the viewer that will be needed later
         #self.viewer = napari.current_viewer() #Doesnt work, returns None
 
-        layout0 = QtWidgets.QVBoxLayout()
+        layout0 = QVBoxLayout()
         self.setLayout(layout0)
 
-        group_box0 = QtWidgets.QGroupBox(header)
+        group_box0 = QGroupBox(header)
         #self.t0_vbox0.addWidget(self.group_box0)
         layout0.addWidget(group_box0)
 
-        gridlayout = QtWidgets.QGridLayout()
+        gridlayout = QGridLayout()
         group_box0.setLayout(gridlayout)
 
-        self.b_set = QtWidgets.QPushButton("Set currently selected")
+        self.b_set = QPushButton("Set currently selected")
         gridlayout.addWidget(self.b_set,0,0)
         self.b_set.clicked.connect(self.b_set_on_click) #Signal
   
-        gridlayout.addWidget(QtWidgets.QLabel("name"),1,0)
-        self.l_name_v = QtWidgets.QLabel("")
+        gridlayout.addWidget(QLabel("name"),1,0)
+        self.l_name_v = QLabel("")
         gridlayout.addWidget(self.l_name_v,1,1)
 
-        gridlayout.addWidget(QtWidgets.QLabel("shape"),2,0)
-        self.l_shape_v = QtWidgets.QLabel("")
+        gridlayout.addWidget(QLabel("shape"),2,0)
+        self.l_shape_v = QLabel("")
         gridlayout.addWidget(self.l_shape_v,2,1)
 
-        #layout.addWidget(QtWidgets.QLabel("slicing axis"),3,0)
-        self.l_slicingaxis_v = QtWidgets.QLabel("")
+        #layout.addWidget(QLabel("slicing axis"),3,0)
+        self.l_slicingaxis_v = QLabel("")
         # layout.addWidget(self.l_slicingaxis_v,3,1)
         # #self.l_slicingaxis_v.hide() #Hide
         # self.l_slicingaxis_v.setHidden(True) #Hide
 
-        #layout.addWidget(QtWidgets.QLabel("slice shape"),4,0)
-        self.l_sliceshape_v = QtWidgets.QLabel("")
+        #layout.addWidget(QLabel("slice shape"),4,0)
+        self.l_sliceshape_v = QLabel("")
         # layout.addWidget(self.l_sliceshape_v,4,1)
         # self.l_sliceshape_v.hide() #Hide
 
-        #layout.addWidget(QtWidgets.QLabel("nslice"),5,0)
-        self.l_nslice_v = QtWidgets.QLabel("")
+        #layout.addWidget(QLabel("nslice"),5,0)
+        self.l_nslice_v = QLabel("")
         # layout.addWidget(self.l_nslice_v,5,1)
         # self.l_nslice_v.hide() #Hide
 
@@ -993,7 +989,7 @@ class cSliceBySliceFunctHelper():
 #     return ret
 
 
-class widget_PandasDFTable(QtWidgets.QTableWidget):
+class widget_PandasDFTable(QTableWidget):
     '''
     A simple table that displays a pandas dataframe without interaction
 
@@ -1015,9 +1011,9 @@ class widget_PandasDFTable(QtWidgets.QTableWidget):
 
         #Header
         for i,colnames in enumerate(dataframe.keys()):
-            self.setItem(0,i, QtWidgets.QTableWidgetItem(str(colnames)))
+            self.setItem(0,i, QTableWidgetItem(str(colnames)))
         
         #data
         for i, colnames in enumerate(dataframe.keys()):
             for j, value in enumerate(dataframe.get(colnames)):
-                self.setItem(j, i, QtWidgets.QTableWidgetItem(str(value)))
+                self.setItem(j, i, QTableWidgetItem(str(value)))
