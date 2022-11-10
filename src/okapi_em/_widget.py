@@ -386,6 +386,9 @@ class MainQWidget(QWidget):
 
             
             elif self.rbChaffer.isChecked():
+                #Use chafer to remove charging artifacts
+                #Use charge artifact label
+
                 #Dont use the chaffer's 3d method
                 #Use this engine to do slice by slice so that it can be monitored
 
@@ -405,21 +408,26 @@ class MainQWidget(QWidget):
             
             if not cCalculate is None:
 
-                #TODO: USe the napari Activity progress bar
-
                 estimate_iters = cCalculate.get_len()
                 print(f"estimate_iters:{estimate_iters}")
                 self.iter=0
+
+                pbr=progress(total=estimate_iters,desc="Chafer charging artifact removal in progress")
+
                 def calbackfn():
                     print(f"slice iter:{self.iter} / {estimate_iters}")
                     self.iter+=1
+                    pbr.update(1)
+                    pbr.refresh()
 
                 data_filt_whole = cCalculate.run(calbackfn)
 
                 print("Calculation complete")
 
+                pbr.close()
+
                 if not data_filt_whole is None:
-                    self.viewer.add_image(data_filt_whole, name="FFT-dir filter")
+                    self.viewer.add_image(data_filt_whole, name="chafer filter")
 
 
         # if self.chkPreview.isChecked():
