@@ -17,7 +17,7 @@ Powered by [chafer] and [quoll].
 
 This [napari] plugin contains the following tools:
 
-- Two charge artifact suppression filter
+- Two charge artifact suppression filters
     - directional fourier bandapass filter
     - line-by-line filter function optimiser and subtraction (requires charge artifact labels)
 - slice alignment using constrained SIFT
