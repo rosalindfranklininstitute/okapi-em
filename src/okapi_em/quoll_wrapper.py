@@ -58,7 +58,7 @@ def getFRC(data2square):
         tifffile.imsave(image_filename,data2square)
 
         Img = reader.Image(
-            filename=image_filename
+            filename=image_filename,
         )
         Img.pixel_size=1
 
@@ -84,7 +84,7 @@ def getFRC(data2square):
     return res
 
 
-def getTiledFRC(data2d, tilesize=256):
+def getTiledFRC(data2d, tilesize=256, pixel_size_nm=1.0):
     '''
     Calculates the FRC of the image by splitting it into square tiles of shape (tilesize,tilesize)
 
@@ -109,9 +109,12 @@ def getTiledFRC(data2d, tilesize=256):
         tifffile.imsave(image_filename,data2d)
 
         Img = reader.Image(
-                filename=image_filename
+            filename=image_filename,
+            pixel_size=pixel_size_nm,
+            unit="nm"
             )
-        Img.pixel_size=1 #prevent errors. quoll uses this to estimate resolution in physical units
+        #Img.pixel_size=1 #prevent errors. quoll uses this to estimate resolution in physical units
+        #Img.pixel_size=pixel_size_nm
 
         dfres = oneimg.calc_local_frc(Img, tilesize, tempdir.name)
 

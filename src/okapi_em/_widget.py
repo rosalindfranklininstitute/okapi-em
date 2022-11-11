@@ -21,10 +21,13 @@ Main napari widget with data selector and tabs with the tools
 #from qtpy import QtWidgets
 from qtpy.QtWidgets import QWidget, QTabWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox, QGridLayout
 from qtpy.QtWidgets import QRadioButton, QCheckBox,QPushButton, QLabel,QSpinBox, QTableWidget, QTableWidgetItem
+from qtpy.QtWidgets import QDoubleSpinBox
 
 import napari
 from napari.types import ImageData, LayerDataTuple
 from napari.utils import progress
+
+#from magicgui.widgets import Table #Note, this is not documented in magicgui
 
 from . import filters
 from . import measure_charging
@@ -36,7 +39,6 @@ import numpy as np
 
 import chafer
 from . import quoll_wrapper as quoll
-
 
 from . import slice_alignment
 
@@ -55,54 +57,12 @@ class MainQWidget(QWidget):
 
         print(f"napari_viewer: {napari_viewer}")
 
-        #layout = QVBoxLayout()
         self.setLayout(QVBoxLayout())
-
-        #self.t0_vbox0 = QVBoxLayout() #Items organised vertically
-        # self.tabChargeSuppr.addWidget( self.t0_vbox0 )
-        #self.tabChargeSuppr.setLayout(self.t0_vbox0 )
-        #self.layout().addWidget(self.t0_vbox0)
-
-        # Data source Box |---|
-        #Group here the controls to select data/slice
-        # self.group_box0 = QGroupBox("Data source")
-        # #self.t0_vbox0.addWidget(self.group_box0)
-        # self.layout().addWidget(self.group_box0)
-
-        # self.group_box0_vbox0 = QVBoxLayout()
-        # self.group_box0.setLayout(self.group_box0_vbox0)
-
-        # self.group_box0_vbox0.addWidget(QLabel("Set data source"))
-        # # self.btnSetDataSourceCurrent = QPushButton("Set currently selected")
-        # # self.group_box0_vbox0.addWidget(self.btnSetDataSourceCurrent)
-        # # self.btnSetDataSourceCurrent.clicked.connect(self.btnSetDataSourceCurrent_on_click) #Signal
         
         # self.w_setselect = widget_ImageSetCurrrentSelect(napari_viewer)
         # self.group_box0_vbox0.addWidget(self.w_setselect)
         self.w_setselect = widget_ImageSetCurrentSelect(napari_viewer, "Data source")
         self.layout().addWidget(self.w_setselect)
-
-        # #Grid of labels to show information of data and slice selected
-        # self.t0_grid0 = QGridLayout()
-        # self.group_box0_vbox0.addLayout( self.t0_grid0)
-
-        # self.label3 = QLabel("layer:")
-        # self.t0_grid0.addWidget(self.label3, 0,0)
-        # self.labelSelLayerName = QLabel("")
-        # self.t0_grid0.addWidget(self.labelSelLayerName, 0,1)
-        # self.label4 = QLabel("nslice:")
-        # self.t0_grid0.addWidget(self.label4, 1,0)
-        # self.labelSelNSlice = QLabel("")
-        # self.t0_grid0.addWidget(self.labelSelNSlice, 1,1)
-        # self.label5 = QLabel("slicing axis:")
-        # self.t0_grid0.addWidget(self.label5, 2,0)
-        # self.labelSlicingAxis = QLabel("")
-        # self.t0_grid0.addWidget(self.labelSlicingAxis, 2,1)
-        # self.label6 = QLabel("data slice shape:")
-        # self.t0_grid0.addWidget(self.label6, 3,0)
-        # self.labelSliceDims = QLabel("")
-        # self.t0_grid0.addWidget(self.labelSliceDims, 3,1)
-        # Data Source Box |___| end
 
         #Put a tab widget that will help select operations
         self.tabwidget = QTabWidget()
@@ -260,42 +220,40 @@ class MainQWidget(QWidget):
     def ui_do_tab_Quoll(self):
         # /tabQuoll \
         if quoll.is_quoll_available:
-            self.tabQuoll = QWidget()
-            self.tabwidget.addTab(self.tabQuoll, "Quoll")
+            tabQuoll = QWidget()
+            self.tabwidget.addTab(tabQuoll, "Quoll")
 
-            self.vBox4 = QVBoxLayout() #Items organised vertically
-            self.tabQuoll.setLayout(self.vBox4 )
+            vBox4 = QVBoxLayout() #Items organised vertically
+            tabQuoll.setLayout(vBox4)
 
-            # self.vBox4.addWidget(QLabel("FRC calculations"))
-            # self.btnQuollCalcFRC = QPushButton("Calculate FRC (whole slice)")
-            # self.vBox4.addWidget(self.btnQuollCalcFRC)
-            # self.btnQuollCalcFRC.clicked.connect(self.btnQuollCalcFRC_onclick) #Signal
-
-            # self.hBox4 = QHBoxLayout()
-            # self.vBox4.addLayout(self.hBox4)
-            # self.hBox4.addWidget(QLabel("Value /px"))
-            # self.lblFRCWholeImg=QLabel("0")
-            # self.hBox4.addWidget(self.lblFRCWholeImg)
-
-            self.btnQuollCalcFRCTiled = QPushButton("Calculate FRC tiled")
-            self.vBox4.addWidget(self.btnQuollCalcFRCTiled)
-            self.btnQuollCalcFRCTiled.clicked.connect(self.btnQuollCalcFRCTiled_onclick) #Signal
             qgrid3_layout = QGridLayout()
-            self.vBox4.addLayout(qgrid3_layout)
+            vBox4.addLayout(qgrid3_layout)
             qgrid3_layout.addWidget(QLabel("tile size (px):"),0,0)
-            self.spbQuolTileSize = QSpinBox()
-            self.spbQuolTileSize.setMinimum(8)
-            self.spbQuolTileSize.setMaximum(10000)
-            self.spbQuolTileSize.setValue(256)
-            qgrid3_layout.addWidget(self.spbQuolTileSize, 0,1)
-            self.quollTableContainerWidget=QWidget()
-            qgrid3_layout.addWidget(self.quollTableContainerWidget)
+            self.spbQuolTileSize_px = QSpinBox()
+            self.spbQuolTileSize_px.setMinimum(8)
+            self.spbQuolTileSize_px.setMaximum(10000)
+            self.spbQuolTileSize_px.setValue(256)
+            qgrid3_layout.addWidget(self.spbQuolTileSize_px, 0,1)
             
+            #add pixel size box
+            qgrid3_layout.addWidget(QLabel("pixel size (nm):"),1,0)
+            self.spbQuolPixelSize_nm = QDoubleSpinBox()
+            self.spbQuolPixelSize_nm.setMinimum(0.001)
+            self.spbQuolPixelSize_nm.setMaximum(10000000)
+            self.spbQuolPixelSize_nm.setValue(1.0)
+            qgrid3_layout.addWidget(self.spbQuolPixelSize_nm, 1,1)           
+
+            btnQuollCalcFRCTiled = QPushButton("Calculate FRC tiled")
+            vBox4.addWidget(btnQuollCalcFRCTiled)
+            btnQuollCalcFRCTiled.clicked.connect(self.btnQuollCalcFRCTiled_onclick) #Signal
+
             #table with infomation
-            self.quollTableContainerWidgetLayout=QVBoxLayout()
-            self.quollTableContainerWidget.setLayout(self.quollTableContainerWidgetLayout)
-            self.quollTable=widget_PandasDFTable(self.viewer)
-            self.quollTableContainerWidgetLayout.addWidget(self.quollTable)
+            quollTableContainerWidget=QWidget()
+            vBox4.addWidget(quollTableContainerWidget)
+            quollTableContainerWidgetLayout=QVBoxLayout()
+            quollTableContainerWidget.setLayout(quollTableContainerWidgetLayout)
+            self.quollTable=widget_OkapiemTable(self.viewer)
+            quollTableContainerWidgetLayout.addWidget(self.quollTable)
 
 
     def freqselector_high_valueChanged(self):
@@ -317,22 +275,6 @@ class MainQWidget(QWidget):
 
         curDataSlice = self.w_setselect.get_active_image_selected_data_slice()
         if not curDataSlice is None:
-
-            # myfunc=None
-
-            # freq_low = self.freqselector_low.value()
-            # freq_high = self.freqselector_high.value()
-            # def func1(data2D):
-            #     return filters.fft_bandpass_filter_dirx_2D(data2D,freq_low, freq_high)
-
-            # c_filter = chafer.cls_charge_artifact_suppression_filter(
-            #     self.chafer_widg_nlines.value(),
-            #     self.chafer_widg_maxlength.value(),
-            #     self.chafer_widg_minlength.value())
-
-            # def func2(data2d, dlabels):
-            #     res,opts= c_filter.charge_artifact_FD_filter_downup_av_prevlines3_2d(data2d,dlabels)
-            #     return res
 
             datares=None
 
@@ -428,92 +370,6 @@ class MainQWidget(QWidget):
 
                 if not data_filt_whole is None:
                     self.viewer.add_image(data_filt_whole, name="chafer filter")
-
-
-        # if self.chkPreview.isChecked():
-        #     #Check if there is valid data for creating the preview
-            
-        #     if not self.curDataSlice is None:
-        #         #Debug
-        #         #print(f"curData.shape = {self.curData.shape}")
-        #         self.labelSliceDims.setText(str(self.curDataSlice.shape))
-
-        #         freq_low = self.freqselector_low.value()
-        #         freq_high = self.freqselector_high.value()
-
-        #         #print(f"freq_low : {freq_low} , freq_high: {freq_high}")
-
-        #         #Calculate the filtered data
-        #         dataPreview = filters.fft_bandpass_filter_dirx_2D(self.curDataSlice,freq_low, freq_high)
-
-        #         if self.myImageLayer is None or not self.myImageLayer in self.viewer.layers:
-        #             #self.myImageLayer = self.viewer.add_image(dataPreview, name="preview")
-        #             #self.myImageLayer._keep_auto_contrast=True #This helps show image with auto contrast however associated button does not show it is pressed
-        #             #self.myImageLayer.reset_contrast_limits() #Try, doesnt work
-        #             self.myImageLayer = self.viewer.add_image(dataPreview, name="preview", contrast_limits= (self.curDataSlice.min(), self.curDataSlice.max()))
-
-        #         else:
-        #             #Dont create a new layer, just modify it
-        #             self.myImageLayer.data = dataPreview 
-        #             #self.myImageLayer.refresh()
-
-    # def btnSetDataSourceCurrent_on_click(self):
-    #     #Check if there is valid data for creating the preview
-        
-    #     #Get current layer and current slice if applicable
-    #     active0 = self.viewer.layers.selection.active
-    #     if not active0 is None:
-    #         print("Current active layer name is: ", active0.name)
-    #         self.labelSelLayerName.setText(active0.name)
-
-    #         self.curData = active0.data
-
-    #         self.curDataSlice  = None #For the previews
-    #         if self.curData.ndim==3:
-    #             print("ndim=3")
-
-    #             #Get the current slice if the viewer is in 2D mode
-
-    #             if self.viewer.dims.ndisplay == 2:
-    #                 #Get the currently viewing slice
-    #                 dims0 = self.viewer.dims
-
-    #                 nslice = dims0.current_step[0] #Gets the slice number that is currently being viewed, 1st index is the slice number, but which axis is not given here
-    #                 print("nslice: ", str(nslice))
-    #                 self.labelSelNSlice.setText(str(nslice))
-
-    #                 order0 = dims0.order[0] #Gets the axis (or plane), that the Viewer is currently viewing
-    #                 if order0 == 0: #z
-    #                     self.curDataSlice = self.curData[nslice,...]
-    #                     self.labelSlicingAxis.setText("z")
-    #                 elif order0 == 1: #y
-    #                     self.curDataSlice = self.curData[:,nslice,:]
-    #                     self.labelSlicingAxis.setText("y")
-    #                 else: #x
-    #                     self.curDataSlice = self.curData[...,nslice]
-    #                     self.labelSlicingAxis.setText("x")
-
-    #                 #Get the max freq for the filter from the curDataSlice
-    #                 maxfreq = int(self.curDataSlice.shape[1])
-    #                 #Adjust max and min values of freq range numerics
-    #                 self.freqselector_low.setMaximum(maxfreq)
-    #                 self.freqselector_high.setMaximum(maxfreq)
-
-    #                 self.updatePreview()
-
-    #             else:
-    #                 print("Viewer is in 3D mode, cannot get slice")
-    #                 self.labelSelNSlice.setText("Viewer in 3D mode, cannot get slice")
-
-    #         elif self.curData.ndim==2:
-    #             print("ndim=2")
-    #             self.curDataSlice = self.curData
-    #             self.updatePreview()
-    #         else: #ndims=1
-    #             print("ndim=1, Unsupported")
-    #             return
-    #     else:
-    #         print("No active layer to select data source.")
     
     def btnMCCalculate_onclick(self):
         #Run the measure charging
@@ -579,6 +435,8 @@ class MainQWidget(QWidget):
                 self.viewer.add_image(res, name="stack aligned")
 
     def btnQuollCalcFRC_onclick(self):
+        #NOT USED
+
         print("btnQuollCalcFRC_onclick()")
 
         with progress(total=2,desc="FRC calculation in progress") as pbr:
@@ -602,7 +460,8 @@ class MainQWidget(QWidget):
         print("btnQuollCalcFRCTiled_onclick()")
 
         #Gathers tile size parameter
-        tile_size = self.spbQuolTileSize.value()
+        tile_size = self.spbQuolTileSize_px.value()
+        pixel_size_nm = self.spbQuolPixelSize_nm.value()
 
         #Runs the FRC calculation for tiles
         with progress(total=2,desc="FRC tiled calculation in progress") as pbr:
@@ -611,7 +470,7 @@ class MainQWidget(QWidget):
 
             pbr.update(1)
 
-            res = quoll.getTiledFRC(data2d, tilesize=tile_size)
+            res = quoll.getTiledFRC(data2d, tilesize=tile_size, pixel_size_nm=pixel_size_nm)
 
             pbr.update(1)
 
@@ -621,23 +480,23 @@ class MainQWidget(QWidget):
                 dfres, heatmap = res
 
                 print(f"FRC result summary:{dfres.describe().to_dict()}")
-                #self.frctable = widget_PandasDFTable(self.viewer, dfres)
-                #self.quollTableContainerWidget.layout().addWidget(self.frctable)
 
-                #self.frctable = widget_PandasDFTable(self.quollTableContainerWidget, dfres)
-                #TODO remove all widgets if any
                 #self.quollTableContainerWidgetLayout.addWidget(widget_PandasDFTable(self.viewer, dfres))
                 #self.frctable = widget_PandasDFTable(self.viewer, dfres)
-                self.quollTable.setDataframe(dfres) #hopefully it will update by itself
+                #self.quollTable.setDataframe(dfres) #hopefully it will update by itself
                 
-                #TODO: display a heatmap
+                #Display results in the same way as napari-quoll
+                #table_summary = Table(value=dfres.describe().to_dict())
+                #self.quollTable.setDataframe(table_summary)
+                #self.quollTable.setDataframe(dfres.describe()['Resolution'])
+                self.quollTable.setFromDict(dfres.describe().to_dict()['Resolution'])
+
+                # display a heatmap
                 self.viewer.add_image(heatmap,name="FRC heatmap",
                     colormap="viridis",
                     opacity=0.3
                 )
         return
-
-                
 
 
     # def get_napari_image_list(self):
@@ -654,9 +513,6 @@ class MainQWidget(QWidget):
     #     #         if l in selected_images:
     #     #             item.setSelected(True)
     #     pass
-
-
-
 
 
 
@@ -792,49 +648,7 @@ class widget_ImageSetCurrentSelect(QWidget):
                 curDataSlice= curData
             
         return curDataSlice
- 
-
-
-    # #TODO: Create function that returns iterator
-    # class iteratorSliceBySlice:
-    #     '''
-    #     Iterator that gets data slice by slice
         
-    #     It is implemented using the alternative iterator protocol
-    #     that uses __getitem__ and __len__'''
-    #     def __init__(self,data, viewer):
-    #         if data.ndim==3:
-    #             #gets orientation of viewing. If viewer is in 3D it sets to z-axis order=0
-    #             self.order=0
-    #             if self.viewer.dims.ndisplay == 2:
-    #                 dims0 = self.viewer.dims
-    #                 self.order = dims0.order[0] #Gets the axis (or plane), that the Viewer is currently viewing
-                
-
-    #             self.i=0
-
-    #             self.data_oriented = None
-
-    #             if self.order == 0: #z
-    #                 self.data_oriented=data
-    #                 self.l_slicingaxis_v.setText('z')
-    #             elif self.order == 1: #y
-    #                 self.data_oriented = np.transpose(data,(1,2,0))
-    #                 self.l_slicingaxis_v.setText("y")
-    #             else: #x
-    #                 self.data_oriented = np.transpose(data,(2,0,1))
-    #                 self.l_slicingaxis_v.setText("x")
-
-                
-    #         else:
-    #             return None
-
-    #     def __iter__(self, data, viewer):
-            
-
-    #         return self #Needed
-
-    #     def __next__(self):
 
 class cSliceBySliceFunctHelper():
 
@@ -1000,7 +814,7 @@ class cSliceBySliceFunctHelper():
 #     return ret
 
 
-class widget_PandasDFTable(QTableWidget):
+class widget_OkapiemTable(QTableWidget):
     '''
     A simple table that displays a pandas dataframe without interaction
 
@@ -1014,10 +828,10 @@ class widget_PandasDFTable(QTableWidget):
         self.dataframe = dataframe
 
         #Fill table with content from dataframe
-        rowcount = dataframe.shape[0]
+        rowcount = dataframe.shape[0]+1
         columncount = dataframe.shape[1]
 
-        self.setRowCount(rowcount+1)
+        self.setRowCount(rowcount)
         self.setColumnCount(columncount)
 
         #Header
@@ -1028,3 +842,20 @@ class widget_PandasDFTable(QTableWidget):
         for i, colnames in enumerate(dataframe.keys()):
             for j, value in enumerate(dataframe.get(colnames)):
                 self.setItem(j, i, QTableWidgetItem(str(value)))
+
+    def setFromDict(self, dict0,numberformat='{:.3e}'):
+        self.clearContents()
+
+        rowcount = len(dict0)
+        columncount= 2
+        self.setRowCount(rowcount)
+        self.setColumnCount(columncount)
+        
+        self.horizontalHeader().setVisible(False)
+        self.verticalHeader().setVisible(False)
+
+        for i, key0 in enumerate(dict0.keys()):
+            v= dict0[key0]
+            self.setItem(i, 0, QTableWidgetItem(str(key0)))
+            #self.setItem(i, 1, QTableWidgetItem(str(v)))
+            self.setItem(i, 1, QTableWidgetItem(numberformat.format(v)))
