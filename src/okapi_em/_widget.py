@@ -71,9 +71,9 @@ class MainQWidget(QWidget):
         #self.t0_vbox0.addWidget(self.tabwidget)
 
         #Create all tabs here
-        self.ui_do_tab_ChargeSuppression()
         self.ui_do_tab_SliceAlignment()
-        self.ui_do_tab_Quoll()
+        self.ui_do_tab_ChargeSuppression()
+        self.ui_do_tab_ResMeas()
 
     def ui_do_tab_ChargeSuppression(self):
         # /tabChargeSuppr \ t0_vbox0
@@ -88,7 +88,7 @@ class MainQWidget(QWidget):
         # Filter: Directional band-pass
         # Radiobutton followed by a box with controls for this filter
         self.rbDirFFT = QRadioButton("Directional band-pass FFT filter")
-        self.rbDirFFT.setChecked(True)
+        self.rbDirFFT.setChecked(False)
         self.t0_vbox0.addWidget( self.rbDirFFT)
         #TODO, may need 'connection'
         #Options for this filter are contained in the next box grpBox1
@@ -121,17 +121,17 @@ class MainQWidget(QWidget):
         self.t0_hbox.addWidget(self.freqselector_high)
         self.freqselector_high.valueChanged.connect(self.freqselector_high_valueChanged)
 
-        self.rbChaffer = QRadioButton("Chaffer")
-        self.rbChaffer.setChecked(False)
-        self.t0_vbox0.addWidget(self.rbChaffer)
-        self.grpBoxChaffer = QGroupBox("")
-        self.t0_vbox0.addWidget(self.grpBoxChaffer) #Add chaffer UI to this grpBoxChaffer
-        self.grpBoxChaffer_layout = QVBoxLayout()
-        self.grpBoxChaffer.setLayout(self.grpBoxChaffer_layout)
+        self.rbChafer = QRadioButton("Chafer")
+        self.rbChafer.setChecked(True)
+        self.t0_vbox0.addWidget(self.rbChafer)
+        self.grpBoxChafer = QGroupBox("")
+        self.t0_vbox0.addWidget(self.grpBoxChafer) #Add Chafer UI to this grpBoxChafer
+        self.grpBoxChafer_layout = QVBoxLayout()
+        self.grpBoxChafer.setLayout(self.grpBoxChafer_layout)
 
         #label data selector
         self.w_setselectlabel = widget_ImageSetCurrentSelect(self.viewer, "Labels data source")
-        self.grpBoxChaffer_layout.addWidget(self.w_setselectlabel)
+        self.grpBoxChafer_layout.addWidget(self.w_setselectlabel)
 
         #need parameters
         #nlinesaverage=20,
@@ -139,7 +139,7 @@ class MainQWidget(QWidget):
         #data_fit_min_length_px = 50
 
         qgrid2_layout = QGridLayout()
-        self.grpBoxChaffer_layout.addLayout(qgrid2_layout)
+        self.grpBoxChafer_layout.addLayout(qgrid2_layout)
 
         qgrid2_layout.addWidget( QLabel("nlinesaverage") ,0,0)
         self.chafer_widg_nlines = QSpinBox()
@@ -161,11 +161,6 @@ class MainQWidget(QWidget):
         self.chafer_widg_maxlength.setMaximum(65536)
         self.chafer_widg_maxlength.setValue(700)
         qgrid2_layout.addWidget( self.chafer_widg_maxlength ,2,1)
-        
-        #not working
-        # self.chafer_widget = chaffer_magicgui_widget.native
-        # self.t0_vbox0.addWidget(self.chafer_widget)
-        #self.t0_vbox0.addWidget(chafer_widget.native)
 
         #Need select source file,
         #Need user to select labels file
@@ -217,14 +212,19 @@ class MainQWidget(QWidget):
         self.btnSACalculate.clicked.connect(self.btnSACalculate_onclick) #Signal
 
 
-    def ui_do_tab_Quoll(self):
+    def ui_do_tab_ResMeas(self):
         # /tabQuoll \
         if quoll.is_quoll_available:
+        #if True: #Debug UI in windows
             tabQuoll = QWidget()
-            self.tabwidget.addTab(tabQuoll, "Quoll")
+            self.tabwidget.addTab(tabQuoll, "Res. measurement")
 
             vBox4 = QVBoxLayout() #Items organised vertically
             tabQuoll.setLayout(vBox4)
+
+            label0 = QLabel("Resolution measurement\nFourier Ring Correlation (FRC) with Quoll")
+            label0.setWordWrap(True)
+            vBox4.addWidget(label0)
 
             qgrid3_layout = QGridLayout()
             vBox4.addLayout(qgrid3_layout)
@@ -285,7 +285,7 @@ class MainQWidget(QWidget):
                 
                 datares = filters.fft_bandpass_filter_dirx_2D(curDataSlice,freq_low, freq_high)
 
-            elif self.rbChaffer.isChecked():
+            elif self.rbChafer.isChecked():
                 curLabelsSlice= self.w_setselectlabel.get_active_image_selected_data_slice()
                 c_filter = chafer.cls_charge_artifact_suppression_filter(
                     self.chafer_widg_nlines.value(),
@@ -327,11 +327,11 @@ class MainQWidget(QWidget):
                 cCalculate = cSliceBySliceFunctHelper(self.viewer,func, curData)
 
             
-            elif self.rbChaffer.isChecked():
+            elif self.rbChafer.isChecked():
                 #Use chafer to remove charging artifacts
                 #Use charge artifact label
 
-                #Dont use the chaffer's 3d method
+                #Dont use the Chafer's 3d method
                 #Use this engine to do slice by slice so that it can be monitored
 
                 curLabels= self.w_setselectlabel.get_active_image_selected_data()
@@ -497,23 +497,6 @@ class MainQWidget(QWidget):
                     opacity=0.3
                 )
         return
-
-
-    # def get_napari_image_list(self):
-    #     #Code similar to found in
-    #     # https://github.com/haesleinhuepf/napari-accelerated-pixel-and-object-classification/blob/main/napari_accelerated_pixel_and_object_classification/_dock_widget.py#L392
-    #     # for l in self.viewer.layers:
-    #     #     if isinstance(l, napari.layers.Image):
-    #     #         suffix = ""
-    #     #         if len(l.data.shape) == 4:
-    #     #             suffix = " (current timepoint)"
-    #     #         item = QListWidgetItem(l.name + suffix)
-    #     #         self._available_images.append(l)
-    #     #         self.image_list.addItem(item)
-    #     #         if l in selected_images:
-    #     #             item.setSelected(True)
-    #     pass
-
 
 
 class widget_ImageSetCurrentSelect(QWidget):
@@ -777,41 +760,6 @@ class cSliceBySliceFunctHelper():
             niter= self.n
 
         return niter
-
-
-#NOT WORKING
-# Try to write a widget for chaffer using magicgui
-
-# # In Redlionfish package the decorator @magicfactory is used instead
-# #@magicgui(
-# @magic_factory(
-#     imgd1={'label': 'Data'}, 
-#     imgd2={'label': 'Labels'},
-#     call_button="execute",
-#     layout="vertical",
-#     bThisSlice={'label':'This slice'}
-#     )
-# def chaffer_magicgui_widget(
-#         imgd1: ImageData,
-#         imgd2: ImageData,
-#         bThisSlice=True,
-#         nlinesaverage=20,
-#         data_fit_max_length_edge_px = 700,
-#         data_fit_min_length_px = 50
-#     ) -> LayerDataTuple: #Result is a LayerDataTuple, like (data, {dict_properties})
-
-#     datares = None
-
-#     c_filter = chafer.cls_charge_artifact_suppression_filter(nlinesaverage,data_fit_max_length_edge_px, data_fit_min_length_px)
-
-#     if bThisSlice:
-#         res0, opts = c_filter.charge_artifact_FD_filter_downup_av_prevlines3_2d(imgd1, imgd2)
-#         ret = ( res0 , { 'name':'chafer result of slice'})
-#     else:
-#         res0, opts = c_filter.charge_artifact_FD_filter_downup_av_prevlines3_2d(imgd1, imgd2)
-#         ret = ( res0 , { 'name':'chafer result'})
-
-#     return ret
 
 
 class widget_OkapiemTable(QTableWidget):
