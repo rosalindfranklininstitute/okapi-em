@@ -17,11 +17,11 @@ Powered by [chafer] and [quoll].
 
 This [napari] plugin contains the following tools:
 
-- Two charge artifact suppression filters
-    - directional fourier bandapass filter
-    - line-by-line filter function optimiser and subtraction (requires charge artifact labels)
 - slice alignment using constrained SIFT
-- FRC estimation
+- two charge artifact suppression filters
+    - directional fourier bandapass filter
+    - line-by-line filter function optimiser and subtraction (requires charge artifact labels) - uses [chafer]
+- fourier ring correlation (FRC) resolution estimation - uses [quoll]
 
 ----------------------------------
 
@@ -41,7 +41,7 @@ You can install `okapi-em` via [pip]:
 
 `pip install okapi-em`
 
-For development mode it can be installed by navigating to the cloned `okapi-em` folder and run:
+For development mode it can be installed, clone this package then navigate to the cloned `okapi-em` folder and run:
 
 `pip install -e .`
 
@@ -60,7 +60,7 @@ To install okapi-em with quoll included:
 
 `pip install okapi-em[all]`
 
-Note that to run napari in python 3.7 you will need to use the command:
+Note that to launch napari in python 3.7 you will need to use the command:
 
 `python -m napari`
 
@@ -78,7 +78,7 @@ Distributed under the terms of the [Apache Software License 2.0] license,
 
 ## Issues
 
-If you encounter any problems, please [file an issue] along with a detailed description.
+If you encounter any problems, please file an issue along with a detailed description.
 
 [quoll]: https://github.com/rosalindfranklininstitute/quoll
 [chafer]: https://github.com/rosalindfranklininstitute/chafer
