@@ -55,7 +55,7 @@ class MainQWidget(QWidget):
         super().__init__()
         self.viewer = napari_viewer #Reference to the viewer that will be needed thoughout the class
 
-        print(f"napari_viewer: {napari_viewer}")
+        #print(f"napari_viewer: {napari_viewer}")
 
         self.setLayout(QVBoxLayout())
         
