@@ -17,7 +17,7 @@ def test_example_q_widget(make_napari_viewer, capsys):
 
     # read captured output and check that it's as we expected
     captured = capsys.readouterr()
-    assert captured.out == "Hello World, from Okapi-EM!"
+    assert captured.out == "Hello World, from Okapi-EM!\n"
     
 # def test_example_magic_widget(make_napari_viewer, capsys):
 #     viewer = make_napari_viewer()
