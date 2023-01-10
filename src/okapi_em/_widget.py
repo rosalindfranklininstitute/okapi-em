@@ -26,7 +26,6 @@ from qtpy.QtWidgets import QDoubleSpinBox, QComboBox
 import napari
 from napari.types import ImageData, LayerDataTuple
 from napari.utils import progress
-import pandas as pd
 
 #from magicgui.widgets import Table #Note, this is not documented in magicgui
 
@@ -231,7 +230,7 @@ class MainQWidget(QWidget):
             vBox4.addLayout(qgrid3_layout)
             qgrid3_layout.addWidget(QLabel("tile size (px):"),0,0)
             self.spbQuolTileSize_px = QSpinBox()
-            self.spbQuolTileSize_px.setMinimum(128)
+            self.spbQuolTileSize_px.setMinimum(128) #miplib minimum is 128 pixels
             self.spbQuolTileSize_px.setMaximum(10000)
             self.spbQuolTileSize_px.setValue(256)
             qgrid3_layout.addWidget(self.spbQuolTileSize_px, 0,1)
