@@ -53,15 +53,16 @@ class MainQWidget(QWidget):
 
     def __init__(self, napari_viewer: 'napari.viewer.Viewer'):
         super().__init__()
-        self.viewer = napari_viewer #Reference to the viewer that will be needed later
+        self.viewer = napari_viewer #Reference to the viewer that will be needed thoughout the class
 
         print(f"napari_viewer: {napari_viewer}")
 
         self.setLayout(QVBoxLayout())
         
-        # self.w_setselect = widget_ImageSetCurrrentSelect(napari_viewer)
-        # self.group_box0_vbox0.addWidget(self.w_setselect)
+        # Set default data source button parent
         self.w_setselect = widget_ImageSetCurrentSelect(napari_viewer, "Data source")
+
+        #Creates the user interface 
         self.layout().addWidget(self.w_setselect)
 
         #Put a tab widget that will help select operations
@@ -74,7 +75,7 @@ class MainQWidget(QWidget):
         self.ui_do_tab_SliceAlignment()
         self.ui_do_tab_ChargeSuppression()
         self.ui_do_tab_ResMeas()
-
+    
     def ui_do_tab_ChargeSuppression(self):
         # /tabChargeSuppr \ t0_vbox0
         self.tabChargeSuppr = QWidget()
@@ -505,6 +506,10 @@ class MainQWidget(QWidget):
                     opacity=0.3
                 )
         return
+
+    def hello_World(self):
+        #prints on the console something enlighting. Only used in CI automated tests
+        print ("Hello World, from Okapi-EM!")
 
 
 class widget_ImageSetCurrentSelect(QWidget):

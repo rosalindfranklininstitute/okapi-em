@@ -12,11 +12,12 @@ def test_example_q_widget(make_napari_viewer, capsys):
     my_widget = MainQWidget(viewer)
 
     # call our widget method
-    my_widget._on_click()
+    #my_widget._on_click()
+    my_widget.hello_World()
 
     # read captured output and check that it's as we expected
     captured = capsys.readouterr()
-    assert captured.out == "napari has 1 layers\n"
+    assert captured.out == "Hello World, from Okapi-EM!"
     
 # def test_example_magic_widget(make_napari_viewer, capsys):
 #     viewer = make_napari_viewer()
