@@ -22,8 +22,8 @@ jobs:
     runs-on: ${{ matrix.platform }}
     strategy:
       matrix:
-        #platform: [ ubuntu-latest, windows-latest, macos-latest] #Ubuntu failing tests for unknow reason, maybe pyqt5 <-> pytest incompatibility
-        platform: [ windows-latest, macos-latest] #Reorder
+        platform: [ ubuntu-latest, windows-latest, macos-latest] #Ubuntu failing tests for unknow reason, maybe pyqt5 <-> pytest incompatibility
+        # platform: [ windows-latest, macos-latest] #Reorder
         python-version: [3.7, 3.8, 3.9, '3.10']
 
     steps:
