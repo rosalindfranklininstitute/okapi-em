@@ -21,7 +21,7 @@ Main napari widget with data selector and tabs with the tools
 #from qtpy import QtWidgets
 from qtpy.QtWidgets import QWidget, QTabWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox, QGridLayout
 from qtpy.QtWidgets import QRadioButton, QCheckBox,QPushButton, QLabel,QSpinBox, QTableWidget, QTableWidgetItem
-from qtpy.QtWidgets import QDoubleSpinBox
+from qtpy.QtWidgets import QDoubleSpinBox, QComboBox
 
 import napari
 from napari.types import ImageData, LayerDataTuple
@@ -53,15 +53,16 @@ class MainQWidget(QWidget):
 
     def __init__(self, napari_viewer: 'napari.viewer.Viewer'):
         super().__init__()
-        self.viewer = napari_viewer #Reference to the viewer that will be needed later
+        self.viewer = napari_viewer #Reference to the viewer that will be needed thoughout the class
 
-        print(f"napari_viewer: {napari_viewer}")
+        #print(f"napari_viewer: {napari_viewer}")
 
         self.setLayout(QVBoxLayout())
         
-        # self.w_setselect = widget_ImageSetCurrrentSelect(napari_viewer)
-        # self.group_box0_vbox0.addWidget(self.w_setselect)
+        # Set default data source button parent
         self.w_setselect = widget_ImageSetCurrentSelect(napari_viewer, "Data source")
+
+        #Creates the user interface 
         self.layout().addWidget(self.w_setselect)
 
         #Put a tab widget that will help select operations
@@ -74,7 +75,7 @@ class MainQWidget(QWidget):
         self.ui_do_tab_SliceAlignment()
         self.ui_do_tab_ChargeSuppression()
         self.ui_do_tab_ResMeas()
-
+    
     def ui_do_tab_ChargeSuppression(self):
         # /tabChargeSuppr \ t0_vbox0
         self.tabChargeSuppr = QWidget()
@@ -230,7 +231,7 @@ class MainQWidget(QWidget):
             vBox4.addLayout(qgrid3_layout)
             qgrid3_layout.addWidget(QLabel("tile size (px):"),0,0)
             self.spbQuolTileSize_px = QSpinBox()
-            self.spbQuolTileSize_px.setMinimum(8)
+            self.spbQuolTileSize_px.setMinimum(128) #miplib minimum is 128 pixels
             self.spbQuolTileSize_px.setMaximum(10000)
             self.spbQuolTileSize_px.setValue(256)
             qgrid3_layout.addWidget(self.spbQuolTileSize_px, 0,1)
@@ -238,7 +239,7 @@ class MainQWidget(QWidget):
             #add pixel size box
             qgrid3_layout.addWidget(QLabel("pixel size (nm):"),1,0)
             self.spbQuolPixelSize_nm = QDoubleSpinBox()
-            self.spbQuolPixelSize_nm.setMinimum(0.001)
+            self.spbQuolPixelSize_nm.setMinimum(1e-6)
             self.spbQuolPixelSize_nm.setMaximum(10000000)
             self.spbQuolPixelSize_nm.setValue(1.0)
             qgrid3_layout.addWidget(self.spbQuolPixelSize_nm, 1,1)           
@@ -246,6 +247,16 @@ class MainQWidget(QWidget):
             btnQuollCalcFRCTiled = QPushButton("Calculate FRC tiled")
             vBox4.addWidget(btnQuollCalcFRCTiled)
             btnQuollCalcFRCTiled.clicked.connect(self.btnQuollCalcFRCTiled_onclick) #Signal
+
+            # add option to choose calibration function
+            qgrid3_layout.addWidget(QLabel("calibration function:"), 2, 0)
+            from inspect import getmembers, isfunction
+            self.spbQuollCF = QComboBox()
+            self.spbQuollCF.addItem("None") # do not apply calibration
+            from quoll.frc import frc_calibration_functions
+            cfs = getmembers(frc_calibration_functions, isfunction)
+            self.spbQuollCF.addItems([cfs[i][0] for i in range(len(cfs))])
+            qgrid3_layout.addWidget(self.spbQuollCF, 2, 1)
 
             #table with infomation
             quollTableContainerWidget=QWidget()
@@ -462,6 +473,9 @@ class MainQWidget(QWidget):
         #Gathers tile size parameter
         tile_size = self.spbQuolTileSize_px.value()
         pixel_size_nm = self.spbQuolPixelSize_nm.value()
+        cf_in = str(self.spbQuollCF.currentText())
+        
+        res = None
 
         #Runs the FRC calculation for tiles
         with progress(total=2,desc="FRC tiled calculation in progress") as pbr:
@@ -470,7 +484,12 @@ class MainQWidget(QWidget):
 
             pbr.update(1)
 
-            res = quoll.getTiledFRC(data2d, tilesize=tile_size, pixel_size_nm=pixel_size_nm)
+            res = quoll.getTiledFRC(
+                data2d, 
+                cf_in=cf_in,
+                tilesize=tile_size, 
+                pixel_size_nm=pixel_size_nm
+            )
 
             pbr.update(1)
 
@@ -478,17 +497,7 @@ class MainQWidget(QWidget):
 
             if not res is None:
                 dfres, heatmap = res
-
                 print(f"FRC result summary:{dfres.describe().to_dict()}")
-
-                #self.quollTableContainerWidgetLayout.addWidget(widget_PandasDFTable(self.viewer, dfres))
-                #self.frctable = widget_PandasDFTable(self.viewer, dfres)
-                #self.quollTable.setDataframe(dfres) #hopefully it will update by itself
-                
-                #Display results in the same way as napari-quoll
-                #table_summary = Table(value=dfres.describe().to_dict())
-                #self.quollTable.setDataframe(table_summary)
-                #self.quollTable.setDataframe(dfres.describe()['Resolution'])
                 self.quollTable.setFromDict(dfres.describe().to_dict()['Resolution'])
 
                 # display a heatmap
@@ -497,6 +506,10 @@ class MainQWidget(QWidget):
                     opacity=0.3
                 )
         return
+
+    def hello_World(self):
+        #prints on the console something enlighting. Only used in CI automated tests
+        print ("Hello World, from Okapi-EM!")
 
 
 class widget_ImageSetCurrentSelect(QWidget):

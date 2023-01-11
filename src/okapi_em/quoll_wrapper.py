@@ -19,108 +19,68 @@ A wrapper to help using quoll for FRC calculations
 '''
 
 import numpy as np
-import tempfile
-import tifffile
+from inspect import getmembers, isfunction
 
-#Quoll (FRC) as an optional package?
+# Quoll (FRC) as an optional package?
 is_quoll_available = True
 try:
-    #import quoll.frc
     from quoll.frc import oneimg
     from quoll.io import reader, tiles
+    from quoll.frc import frc_calibration_functions as cfuncs
 except:
     is_quoll_available=False
 
-
-
-def getFRC(data2square):
+def getTiledFRC(data2d, cf_in, tilesize=256, pixel_size_nm=1.0):
     '''
-    Calculates the FRC of the whole image
+    Calculates the FRC of the image by splitting it into square tiles of shape 
+    (tilesize,tilesize)
 
-    Note that this uses the miplib function directly, which has the mibplib's author calibration.
-    Avoid using this function. This is just sitting here as it may be usefule in the future.
-
-    '''
-    res=None
-
-    # check data is square. If not, we may need to crop centre
-
-    if data2square.ndim ==2:
-
-        #Create temporary file, because quoll+miplib only works with quoll.io.reader.Img objects,
-        # and can only be created from files
-        
-        tempdir = tempfile.TemporaryDirectory()
-        
-        image_filename = tempdir.name+'/image_temp.tif'
-        print(f'temporary image_filename: {image_filename}')
-
-        tifffile.imsave(image_filename,data2square)
-
-        Img = reader.Image(
-            filename=image_filename,
-        )
-        Img.pixel_size=1
-
-        #results_df = oneimg.calc_frc_res(Img) #Images must be square
-        try:
-            import miplib.ui.cli.miplib_entry_point_options as opts
-            from miplib.data.io import read as miplibread
-
-            miplibImg = miplibread.get_image(Img.filename)
-            miplibargs = opts.get_frc_script_options([None])
-
-            results_frc1 = oneimg.miplib_oneimg_FRC_calibrated(miplibImg, miplibargs)
-            print (f"results_df : {results_frc1}")
-
-
-            frc_value = results_frc1.resolution["resolution"]
-            res= frc_value
-        except:
-            print("Error using miplib")
-
-        tempdir.cleanup()
-        
-    return res
-
-
-def getTiledFRC(data2d, tilesize=256, pixel_size_nm=1.0):
-    '''
-    Calculates the FRC of the image by splitting it into square tiles of shape (tilesize,tilesize)
+    Params:
+    data2d: np.array containing image data
+    tilesize: int, min 128. Length of one side of the square tile in pixels.
+    pixel_size_nm: float, >0. Physical size of each pixel.
+    cf: str. Name of the function from frc_calibration_functions to use.
 
     Returns: a tuple with two elements
         dfres: a list of FRC values calculated of each tile (no coordinates though)
         FRC heatmap: An image with same dimensions of the original image but as a tiled heatmap of the
-            FRC value in each of the tiles 
+            FRC value in each of the tiles
 
     '''
 
-    res=None
+    res = None
 
     #check data is square. If not, we may need to crop centre
 
-    if data2d.ndim ==2:
-
-        tempdir = tempfile.TemporaryDirectory()
-            
-        image_filename = tempdir.name+'/image_temp.tif'
-        print(f'temporary image_filename: {image_filename}')
-
-        tifffile.imsave(image_filename,data2d)
-
+    if data2d.ndim == 2:
+        
+        # load image as a Quoll Image object
         Img = reader.Image(
-            filename=image_filename,
+            img_data=data2d,
             pixel_size=pixel_size_nm,
             unit="nm"
-            )
-        #Img.pixel_size=1 #prevent errors. quoll uses this to estimate resolution in physical units
-        #Img.pixel_size=pixel_size_nm
+        )
 
-        dfres = oneimg.calc_local_frc(Img, tilesize, tempdir.name)
+        # Get calibration function
+        if cf_in == "None":
+            cf = None
+            print("No calibration performed")
+        else:
+            cf_list = dict(getmembers(cfuncs, isfunction))
+            cf = cf_list[cf_in]
+            print(f"Calibration function is {cf_in}: {cf}")
 
-        res = dfres,get_resolution_heatmap(Img, dfres)
+        # Calculate the FRC
+        dfres = oneimg.calc_local_frc(
+            Img,
+            tile_size=tilesize,
+            calibration_func=cf
+        )
 
-        tempdir.cleanup()
+        res = dfres, get_resolution_heatmap(Img, dfres)
+    
+    else:
+        raise ValueError("Data is not 2D.")
 
     return res
 
@@ -140,7 +100,6 @@ def get_resolution_heatmap(
     Returns:
         _type_: _description_
     """
-
 
     tileshape = list(Image.tiles.values())[0].shape
     restiles = [np.full(shape=tileshape, fill_value=res) for res in np.array(results_df.Resolution)]
