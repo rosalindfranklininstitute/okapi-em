@@ -342,6 +342,9 @@ class MainQWidget(QWidget):
                 #Use chafer to remove charging artifacts
                 #Use charge artifact label
 
+                import time
+                t0 = time.time()
+
                 #Dont use the Chafer's 3d method
                 #Use this engine to do slice by slice so that it can be monitored
 
@@ -381,6 +384,9 @@ class MainQWidget(QWidget):
 
                 if not data_filt_whole is None:
                     self.viewer.add_image(data_filt_whole, name="chafer filter")
+                
+            t1= time.time()
+            print("Chafer. Execution time /s :", str(t1-t0))
     
     def btnMCCalculate_onclick(self):
         #Run the measure charging
@@ -407,6 +413,9 @@ class MainQWidget(QWidget):
         data3d = self.w_setselect.get_active_image_selected_data()
 
         if data3d.ndim==3:
+
+            import time
+            t0 = time.time()
 
             #Ensure data3d is napari and not dask
             data3d = np.array(data3d)
@@ -444,6 +453,9 @@ class MainQWidget(QWidget):
 
             if not res is None:
                 self.viewer.add_image(res, name="stack aligned")
+            
+            t1= time.time()
+            print("Stack alignment. Execution time /s :", str(t1-t0))
 
     def btnQuollCalcFRC_onclick(self):
         #NOT USED
@@ -477,6 +489,9 @@ class MainQWidget(QWidget):
         
         res = None
 
+        import time
+        t0=time.time()
+
         #Runs the FRC calculation for tiles
         with progress(total=2,desc="FRC tiled calculation in progress") as pbr:
 
@@ -505,6 +520,9 @@ class MainQWidget(QWidget):
                     colormap="viridis",
                     opacity=0.3
                 )
+        t1= time.time()
+        print("FRC. Execution time /s :", str(t1-t0))
+
         return
 
     def hello_World(self):
