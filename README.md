@@ -15,6 +15,11 @@ A napari plugin for processing serial-FIB-SEM data.
 
 Powered by [chafer] and [quoll].
 
+
+A full description of this software is presented in biorXiv preprint paper:
+
+https://doi.org/10.1101/2022.12.15.520541
+
 This [napari] plugin contains the following tools:
 
 - slice alignment using constrained SIFT
@@ -39,32 +44,28 @@ https://napari.org/plugins/stable/index.html
 
 You can install `okapi-em` via [pip]:
 
-`pip install okapi-em`
+`>pip install okapi-em`
 
-For development mode it can be installed, clone this package then navigate to the cloned `okapi-em` folder and run:
+or using napari's plugin installation engine `Plugins->Install/Uninstall Plugins...` and filter for **Okapi-EM**.
 
-`pip install -e .`
+For installing in development mode , clone this package then navigate to the cloned `okapi-em` folder and run:
 
-This should install in any machine, however ...
+`>pip install -e .`
 
-Currently the FRC calculation provided by the [quoll] package which is optional because
-of its stringent environmemt requirements from miplib package. These currently are:
+Okapi-EM is a napari plugin. Launching napari is therefore required.
 
-- python 3.7
-- linux OS
+`>napari`
 
-This issue will be addressed in future version.
+and then navigate `Menu->Plugins->Okapi-EM`
 
+Note that to launch napari in older versions of python (<=3.7) you will need to use the command:
 
-To install okapi-em with quoll included:
+`>python -m napari`
 
-`pip install okapi-em[all]`
+## Computing requirements
+Okapi-EM does not require powerful computers to run. None of the tools use GPU accelaration.
 
-Note that to launch napari in python 3.7 you will need to use the command:
-
-`python -m napari`
-
-
+The minimum recommended RAM depends on the size of the data being used in napari. For a full image stack of 1Gb, it is recommended that user ensure that 3Gb of RAM is available or can be used. Modern OS's can extend physical RAM using `swap` memory (Linux) or cache (in Windows and also known as virtual memory), but processing can be significantly slower.
 
 ## Contributing
 
@@ -76,7 +77,17 @@ the coverage at least stays the same before you submit a pull request.
 Distributed under the terms of the [Apache Software License 2.0] license,
 "okapi-em" is free and open source software
 
+## Citing
+
+Please cite usage using the following reference.
+
+Perdigão, L. M. A. et al. Okapi-EM – a napari plugin for processing and analysing cryogenic serial FIB/SEM images. 2022.12.15.520541 Preprint at https://doi.org/10.1101/2022.12.15.520541 (2022).
+
+
 ## Issues
+
+There is currently a known issue with napari running in Linux machines, that it does not find the OpenGL driver correctly.
+This will hopefully be resolved in the near future. If you bump into this issue we recommend trying to downgrade the python version. This is not an Okapi-EM problem.
 
 If you encounter any problems, please file an issue along with a detailed description.
 
