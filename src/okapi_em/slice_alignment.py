@@ -36,7 +36,11 @@ def featureMatchingDS(img1, img2):
     # find the keypoints and descriptors with SIFT
     kp1, des1 = sift.detectAndCompute(img1,None)
     kp2, des2 = sift.detectAndCompute(img2,None)
-    
+    #This is probably unnecessary to do it like this
+    # In a stack, most images will have SIFT computed twice
+    # TODO: Create a class that is initialised with image stack
+    # and precalculates Sift's keypoints and descriptors
+
     # BFMatcher with default params
     bf = cv.BFMatcher()
     matches = bf.knnMatch(des1,des2,k=2)
@@ -75,7 +79,7 @@ def featureMatchingDS(img1, img2):
     print(f'{len(matched_filtered)} good matches found')
 
     # cv.drawMatchesKnn expects list of lists as matches.
-    img_match_gauss = cv.drawMatchesKnn(img1,kp1,img2,kp2,matched_filtered,None,flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+    #img_match_gauss = cv.drawMatchesKnn(img1,kp1,img2,kp2,matched_filtered,None,flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
     #plt.figure(figsize = (20,20))
     #plt.imshow(img_match_gauss)
     
