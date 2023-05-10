@@ -23,10 +23,10 @@ from scipy.optimize import least_squares
 
 
 ALIGNMENT_METHOD_DEFAULT = {
-    'translation':True, # (can be overriden by affine setting below)
+    'translation':True,
     'rotation':False, 'shearing_x':True, 'shearing_y':False, # If rotation is true the shearings are ignored
     'scaling':False, 'stretching_x':False, 'stretching_y':True, # If scaling is true, the stretchings are ignored
-    'affine':False # If affine is true all the others are ignored. This setting mean that all parameters in the affine matrix are free to adjust in the optimization
+    'linear':False # If linear is true all the others are ignored. This setting mean that all parameters in the linear matrix are free to adjust in the optimization
 }
 
 
@@ -81,109 +81,78 @@ def featureMatchingDS(img1, img2):
     
     return reference_pts, new_pts
 
-def transform(method, param, points):
-    x0 = points[0]
-    y0 = points[1]
-    
-    #rotation or shearing
-    if method['rotation'] == True:
-        x1 = np.cos(param[2]) * x0 - np.sin(param[2]) * y0
-        y1 = np.sin(param[2]) * x0 + np.cos(param[2]) * y0
-    
-    elif method['shearing_x'] == True:
-        x1 = x0 + param[2] * y0
-        y1 = y0
-        
-    elif method['shearing_y'] == True:
-        x1 = x0
-        y1 = param[2] * x0 + y0
-    
-    else:
-        x1 = x0
-        y1 = y0
-    
-    #scaling or stretching
-    if method['scaling'] == True:
-        x1 = x1 * param[3]
-        y1 = y1 * param[3]
-        
-    elif method['stretching_x'] == True and method['stretching_y'] == False:
-        x1 = x1 * param[3]
-        y1 = y1
-    
-    elif method['stretching_y'] == True and method['stretching_x'] == False:
-        x1 = x1
-        y1 = y1 * param[3]
-        
-    elif method['stretching_x'] == True and method['stretching_y'] == True:
-        x1 = x1 * param[3]
-        y1 = y1 * param[4]
-        
-        
-    #affine 
-    if method['affine'] == True:
-        x1 = param[2] * x0 + param[3] * y0
-        y1 = param[4] * x0 + param[5] * y0
-        
-        
-    #translation    
-    if method['translation'] == True:
-        x1 += param[0]
-        y1 += param[1]
-        
-    return x1, y1
 
 def findMatrix(method, params):
-    if method['affine'] == True:
-        T = np.array([[params[2], params[3], params[0]], [params[4], params[5], params[1]]])
-        
-    elif method['scaling'] == True:
-        if method['rotation'] == True:
-            T = np.array([[params[3] * np.cos(params[2]), -params[3] * np.sin(params[2]), params[0]], 
-                          [params[3] * np.sin(params[2]), params[3] * np.cos(params[2]), params[1]]])
-        elif method['shearing_x'] == True:
-            T = np.array([[params[3], params[3] * params[2], params[0]], [0, params[3], params[1]]])
-        elif method['shearing_y'] == True:
-            T = np.array([[params[3], 0, params[0]], [params[3] * params[2], params[3], params[1]]])
-        else:
-            T = np.array([[params[2], 0, params[0]], [0, params[2], params[1]]])
-            
-    elif method['stretching_x'] == True:
-        if method['rotation'] == True:
-            T = np.array([[params[3] * np.cos(params[2]), -np.sin(params[2]), params[0]], 
-                          [params[3] * np.sin(params[2]), np.cos(params[2]), params[1]]])
-        elif method['shearing_x'] == True:
-            T = np.array([[params[3], params[2], params[0]], [0, 1, params[1]]])
-        elif method['shearing_y'] == True:
-            T = np.array([[params[3], 0, params[0]], [params[3] * params[2], 1, params[1]]])
-        else:
-            T = np.array([[params[2], 0, params[0]], [0, 1, params[1]]])
-            
-    elif method['stretching_y'] == True:
-        if method['rotation'] == True:
-            T = np.array([[np.cos(params[2]), -params[3] * np.sin(params[2]), params[0]], 
-                          [np.sin(params[2]), params[3] * np.cos(params[2]), params[1]]])
-        elif method['shearing_x'] == True:
-            T = np.array([[1, params[3] * params[2], params[0]], [0, params[3], params[1]]])
-        elif method['shearing_y'] == True:
-            T = np.array([[1, 0, params[0]], [params[2], params[3], params[1]]])
-        else:
-            T = np.array([[1, 0, params[0]], [0, params[2], params[1]]])
-            
+
+    #Default to no transform, no translation
+    T= np.array( [[1,0, 0],
+                  [0,1, 0]], dtype='float32')
+    #T is the transform matrix
+    #T = [a0 a1 | t0]
+    #    [a2 a3 | t1]
+
+    #print(f"findMatrix, params:{params}")
+
+    if method['translation']==True:
+        T += np.array([ [0,0,params[0]],
+                        [0,0,params[1]] ], dtype='float32')
+
+    if method['linear'] == True:
+        T += np.array([[params[2], params[3], 0],
+                       [params[4], params[5], 0]], dtype='float32')
     else:
         if method['rotation'] == True:
-            T = np.array([[np.cos(params[2]), -np.sin(params[2]), params[0]], [np.sin(params[2]), np.cos(params[2]), params[1]]])
-        elif method['shearing_x'] == True:
-            T = np.array([[1, params[2], params[0]], [0, 1, params[1]]])
-        elif method['shearing_y'] == True:
-            T = np.array([[1, 0, params[0]], [params[2], 1, params[1]]])
-        else:
-            T = np.array([[1, 0, params[0]], [0, 1, params[1]]])
-            
-    affine = T[:, :2]
-    translate = T[:, 2]
+            T += np.array([[np.cos(params[2]), - np.sin(params[2]), 0], 
+                           [np.sin(params[2]), np.cos(params[2]), 0]], dtype='float32')
+        elif method['shearing_x']==True:
+            T += np.array([[ 0 , params[2] , 0], 
+                           [0 , 0 , 0]], dtype='float32')
+        elif method['shearing_y']==True:
+            T += np.array([[ 0 , 0 , 0], 
+                           [params[2] , 0 , 0]], dtype='float32')
 
-    return T, affine, translate
+        if method['scaling']==True:
+            T *= np.array([[ params[3] , params[3] , 1], 
+                           [params[3] , params[3] , 1]], dtype='float32')
+        elif method['stretching_x']==True:
+            T *= np.array([[ params[3] , 1 , 1], 
+                           [params[3] , 1 , 1]], dtype='float32')
+        elif method['stretching_y']==True:
+            T *= np.array([[ 1 , params[3] , 1], 
+                           [1 , params[3] , 1]], dtype='float32')
+
+    if T is None:
+        raise ValueError("No suitable method transform found")
+            
+    linearT = T[:, :2]
+    translateT = T[:, 2]
+    return T, linearT, translateT
+
+
+def transform(method, param, points):
+    """
+    Applies a 2D affine transformation (linear+translate) to points (x,y)
+
+    This function uses findMatrix method to get the transformation before applying to points
+    
+    Params:
+        method: a dictionary with boolean entries for
+        translation, linear, rotation, shearing_x, shearing_y,
+        scaling, stretching_x, stretching_y
+
+        param: 1D array with elements being the parameters of the transformation
+        indexes 0 and 1 are x and y translation
+        Rest of the indexes depend on the transformation selected with 'method'
+    """
+    
+    # Use findMatrix code
+    T, linearT,translateT = findMatrix(method, param)
+
+    myAff = affineTransform(linearT,translateT)
+    #Apply matrix to points
+    p_res=myAff.applyToPoint(points)
+    return p_res
+
 
 def residual(ref, new, method):
     def r(t):
@@ -192,33 +161,65 @@ def residual(ref, new, method):
         return np.append(rx, ry)
     return r
 
-def findInitialandBounds(method, margin_t=200, margin_a=0.01):
-    if method['affine'] == True:
-        t0 = np.array([0, 0, 1, 0, 0, 1])
-        bounds = ([-margin_t, -margin_t, 1 - margin_a, -margin_a, -margin_a, 1 - margin_a]
-                  , [margin_t, margin_t, 1 + margin_a, margin_a, margin_a, 1 + margin_a])
+def setInitialandBounds(method, margin_t=200, margin_a=0.01):
+    """ Sets initial vallues of params depending on the optimization required and bounds
+    margin_t sets that variation allowed in translation
+    margin_a sets the variation allowed with other parameters around 0 or around 1, depending on the parameter
+
+    Returns:
+        params_init: initial parameters as a 1D numpy array
+        bounds: respective bounds as an array with 2 rows, with 1st row being
+            the lower bounds and second row being the upper bounds.
+    """
     
-    elif method['scaling'] == True or method['stretching_x'] == True or method['stretching_y'] == True:
-        if method['rotation'] == True or method['shearing_x'] == True or method['shearing_y'] == True:
-            t0 = np.array([0, 0, 0, 1])
-            bounds = ([-margin_t, -margin_t, -margin_a, 1 - margin_a], [margin_t, margin_t, margin_a, 1 + margin_a])
-        else:
-            t0 = np.array([0, 0, 1])
-            bounds = ([-margin_t, -margin_t, 1 - margin_a], [margin_t, margin_t, 1 + margin_a])
+    params_init=np.array([0, 0,   1, 0, 0, 1]) #tr_x, tr_y, rot/shear/p2 , scale/stretch/p3, p4, p5
+    bounds = np.array([ [-0.0001, -0.0001, 0.9999, -0.0001, -0.0001, 0.9999],
+                       [ 0.0001,  0.0001, 1.0001,  0.0001,  0.0001, 1.0001] ])
     
+    if method['translation']==True:
+        #First two parameters are the translation
+        bounds[:,:2] = np.array([ [-margin_t, -margin_t],
+                                 [ margin_t,  margin_t] ])
+    
+    if method['linear']==True:
+        #Linear part of the array is free to vary
+        bounds[:,2:] = np.array([ [1-margin_a, -margin_a, -margin_a, 1-margin_a],
+                                 [1+margin_a,  margin_a,  margin_a, 1+margin_a]])
+        
     else:
-        if method['rotation'] == True or method['shearing_x'] == True or method['shearing_y'] == True:
-            t0 = np.zeros(3)
-            bounds = ([-margin_t, -margin_t, -margin_a], [margin_t, margin_t, margin_a])
+        #No p4 or p5 needed
+        params_init=params_init[:-2]
+        bounds=bounds[:,:-2]
+
+        if method['scaling']==False and method['stretching_x']==False and method['stretching_y']==False:
+            #reduce the parameters and bounds
+            # no p3 needed
+            params_init=params_init[:-1]
+            bounds=bounds[:,:-1]
+
+            if method['rotation']==False and method['shearing_x']==False and method['shearing_y']==False:
+                #no p2 needed
+                params_init=params_init[:-1]
+                bounds=bounds[:,:-1]
         else:
-            t0 = np.zeros(2)
-            bounds = ([-margin_t, -margin_t], [margin_t, margin_t])
+            if method['scaling']==True or method['stretching_x']==True or method['stretching_y']==True:
+                params_init[3] = 1 #variations of scalings around one
+                bounds[0,3] = 1-margin_a
+                bounds[1,3] = 1+margin_a
             
-    return t0, bounds
+            if method['rotation']==True or method['shearing_x']==True or method['shearing_y']==True:
+                params_init[2] = 0 #variations of angle and shearing around zero
+                bounds[0,2] = -margin_a
+                bounds[1,2] = +margin_a
+    
+    #print(f"params_init:{params_init}")
+    #print(f"bounds:{bounds}")
+
+    return params_init, bounds
 
 class affineTransform():
     '''
-    Class with for affine transforms,
+    Class for affine transforms,
     typically a matrix for rotation and/or skewing
     and a translation.
 
@@ -338,7 +339,8 @@ def align_stack(image_sequence, method, callbk_tick_fn=None):
     for i in range(len(image_sequence) - 1):
         ref = image_sequence[i]
         new = image_sequence[i + 1]
-        print(f'Matching slice {i + 1} and slice {i + 2} ...')    
+        print("---------------------------------------")
+        print(f'Matching slice {i} and slice {i+1} ...')    
         
         matching_failed=False
         #feature matching
@@ -355,9 +357,8 @@ def align_stack(image_sequence, method, callbk_tick_fn=None):
             coor_new = [x_new, y_new]
         
             #find optimal transformation
-            t0, bounds = findInitialandBounds(method)
+            t0, bounds = setInitialandBounds(method)
             res = least_squares(residual(coor_ref, coor_new, method), t0, bounds=bounds)
-            print('--------------------------------------------------------------------')
             print('Optimisation result: ')
             print('Cost: ', res.cost)
             print('Message: ', res.message)
@@ -381,10 +382,9 @@ def align_stack(image_sequence, method, callbk_tick_fn=None):
 
         if not callbk_tick_fn is None:
             callbk_tick_fn()
-        
-    print('** Completed getting the slice-to-slice transforms.** ')
 
-    print('Accumulating transforms along the stack')
+    print("Completed")
+    print("Accumulating transforms along the stack")
     mat_accum = [aff_transf_0] #First image transform
     mat0 = aff_transf_0
     for i in range(1,len(mats)):

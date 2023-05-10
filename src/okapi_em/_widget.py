@@ -184,8 +184,8 @@ class MainQWidget(QWidget):
         self.chkbxTranslate= QCheckBox("Translate")
         self.chkbxTranslate.setChecked(True)
         self.tabSliceAlignment_l.addWidget(self.chkbxTranslate)
-        self.chkbxAffine= QCheckBox("Linear all free (ov. below)")
-        self.tabSliceAlignment_l.addWidget(self.chkbxAffine)
+        self.chkbxLinear= QCheckBox("Linear all free (ov. below)")
+        self.tabSliceAlignment_l.addWidget(self.chkbxLinear)
 
         hl_Rot = QHBoxLayout()
         self.tabSliceAlignment_l.addLayout(hl_Rot)
@@ -429,7 +429,8 @@ class MainQWidget(QWidget):
             sa_method = slice_alignment.ALIGNMENT_METHOD_DEFAULT
 
             sa_method['translation'] = self.chkbxTranslate.isChecked()
-            sa_method['affine'] = self.chkbxAffine.isChecked()
+            #sa_method['affine'] = self.chkbxAffine.isChecked()
+            sa_method['linear'] = self.chkbxLinear.isChecked()
             sa_method['rotation'] = self.chkbxRotation.isChecked()
             sa_method['shearing_x'] = self.chkbxShearX.isChecked()
             sa_method['shearing_y'] = self.chkbxShearY.isChecked()
