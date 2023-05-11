@@ -507,8 +507,11 @@ def align_stack1(image_sequence, method, *, d_to_dmedian_perc_filt = 0.1, rel_di
         callbk_tick_fn: call back function that will be called between iterations
 
     Returns:
-        The 3D stack aligned data.
-        It is likely to be larger in pixels along the XY plane to compensate for the translation and other transforms
+        A tuple containing
+            The 3D stack aligned data.It is likely to be larger in pixels along
+            the XY plane to compensate for the translation and other transforms
+
+            Affine matrices transforms used between slices
 
     Estimated number of callbacks = (nslices-1) + 3 + nslices = 2*nslices +2
         
@@ -516,7 +519,7 @@ def align_stack1(image_sequence, method, *, d_to_dmedian_perc_filt = 0.1, rel_di
 
     #Check image_sequence is ok
     if len(image_sequence)<=1:
-        raise ValueError("not enough elements in image_sequence")
+        raise ValueError(f"Not enough elements in image_sequence. Only {len(image_sequence)} found.")
     else:
         if image_sequence[0].ndim!=2:
             raise ValueError(f"Element in stack is not 2D, it has {image_sequence[0].ndim} dims")

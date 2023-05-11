@@ -6,10 +6,10 @@
     "configurations": [
 
         {
-            "name": "Python: Current File",
+            "name": "Python: napari",
             "type": "python",
             "request": "launch",
-            "program": "napari.py",
+            "module": "napari",
             "console": "integratedTerminal",
             "justMyCode": false
         }

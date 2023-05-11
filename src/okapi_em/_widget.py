@@ -181,7 +181,7 @@ class MainQWidget(QWidget):
         self.tabSliceAlignment_l = QVBoxLayout() #Items organised vertically
         self.tabSliceAlignment.setLayout(self.tabSliceAlignment_l)
         
-        self.chkbxTranslate= QCheckBox("Translate")
+        self.chkbxTranslate= QCheckBox("Translation")
         self.chkbxTranslate.setChecked(True)
         self.tabSliceAlignment_l.addWidget(self.chkbxTranslate)
         self.chkbxLinear= QCheckBox("Linear all free (ov. below)")
@@ -206,6 +206,35 @@ class MainQWidget(QWidget):
         self.chkbxStretchY = QCheckBox("stretch y")
         hl_Scaling.addWidget(self.chkbxStretchY)
         self.chkbxStretchY.setChecked(True)
+
+        #parameters to control slice alignment feature matching
+        qgrid_adj_params = QGridLayout()
+        self.tabSliceAlignment_l.addLayout(qgrid_adj_params)
+        label_slice_align0 = QLabel("2nd-feat-rel-dist:")
+        qgrid_adj_params.addWidget(label_slice_align0,0,0)
+        self.spb_SliceAlign_SecMatchRelFDistFilt=QDoubleSpinBox()
+        self.spb_SliceAlign_SecMatchRelFDistFilt.setMinimum(0.1)
+        self.spb_SliceAlign_SecMatchRelFDistFilt.setMaximum(1.0)
+        self.spb_SliceAlign_SecMatchRelFDistFilt.setDecimals(2)
+        self.spb_SliceAlign_SecMatchRelFDistFilt.setSingleStep(0.1)
+        self.spb_SliceAlign_SecMatchRelFDistFilt.setValue(0.65)
+        self.spb_SliceAlign_SecMatchRelFDistFilt.setToolTip("Second feature match relative distance criteria filter.\nHigher value gets more matches but lower match confidence.\nValues from 0.1 to 1.0.")
+        qgrid_adj_params.addWidget(self.spb_SliceAlign_SecMatchRelFDistFilt, 0,1)
+
+        label_d_to_dmedian_perc_filt = QLabel("rel-dist to median")
+        qgrid_adj_params.addWidget(label_d_to_dmedian_perc_filt,1,0)
+        self.spb_SliceAlign_RelDistToDMedian=QDoubleSpinBox()
+        self.spb_SliceAlign_RelDistToDMedian.setMinimum(0.01)
+        self.spb_SliceAlign_RelDistToDMedian.setMaximum(10.0)
+        self.spb_SliceAlign_RelDistToDMedian.setDecimals(2)
+        self.spb_SliceAlign_RelDistToDMedian.setSingleStep(0.01)
+        self.spb_SliceAlign_RelDistToDMedian.setValue(0.05)
+        self.spb_SliceAlign_RelDistToDMedian.setToolTip("Second feature match relative distance criteria filter.\nHigher value gets more matches but less precision.\nValues from 0.001 to 10.0. default 0.05")
+        qgrid_adj_params.addWidget(self.spb_SliceAlign_RelDistToDMedian, 1,1)
+
+        self.btn_testSA=QPushButton("Test/preview slice alignment")
+        qgrid_adj_params.addWidget(self.btn_testSA, 2,0)
+        self.btn_testSA.clicked.connect(self.btn_testSA_onclick) #Signal
 
         #Button to start the alignement
         self.btnSACalculate = QPushButton("Align")
@@ -426,19 +455,28 @@ class MainQWidget(QWidget):
             #activ_dialog.show()
 
             #res= slice_alignment.align_stack(data3d, slice_alignment.ALIGNMENT_METHOD_DEFAULT,callbkfn)
-            sa_method = slice_alignment.ALIGNMENT_METHOD_DEFAULT
+            # sa_method = slice_alignment.ALIGNMENT_METHOD_DEFAULT
 
-            sa_method['translation'] = self.chkbxTranslate.isChecked()
-            #sa_method['affine'] = self.chkbxAffine.isChecked()
-            sa_method['linear'] = self.chkbxLinear.isChecked()
-            sa_method['rotation'] = self.chkbxRotation.isChecked()
-            sa_method['shearing_x'] = self.chkbxShearX.isChecked()
-            sa_method['shearing_y'] = self.chkbxShearY.isChecked()
-            sa_method['scaling'] = self.chkbxScaling.isChecked()
-            sa_method['stretching_x'] = self.chkbxStretchX.isChecked()
-            sa_method['stretching_y'] = self.chkbxStretchY.isChecked()
+            # sa_method['translation'] = self.chkbxTranslate.isChecked()
+            # #sa_method['affine'] = self.chkbxAffine.isChecked()
+            # sa_method['linear'] = self.chkbxLinear.isChecked()
+            # sa_method['rotation'] = self.chkbxRotation.isChecked()
+            # sa_method['shearing_x'] = self.chkbxShearX.isChecked()
+            # sa_method['shearing_y'] = self.chkbxShearY.isChecked()
+            # sa_method['scaling'] = self.chkbxScaling.isChecked()
+            # sa_method['stretching_x'] = self.chkbxStretchX.isChecked()
+            # sa_method['stretching_y'] = self.chkbxStretchY.isChecked()
 
-            res= slice_alignment.align_stack(data3d, sa_method,callbkfn)
+            #res= slice_alignment.align_stack(data3d, sa_method,callbkfn)
+
+            p0= self.get_UI_SA_parameters()
+
+            res, _= slice_alignment.align_stack1(data3d,
+                                            p0['method'],
+                                            d_to_dmedian_perc_filt=p0['d2dmedian'],
+                                            rel_dist_to_second_match=p0['reldist2match'],
+                                            callbk_tick_fn=callbkfn
+                                        )
 
             pbr.close()
             #activ_dialog.hide()
@@ -507,6 +545,59 @@ class MainQWidget(QWidget):
                     opacity=0.3
                 )
         return
+
+    def btn_testSA_onclick(self):
+        #TODO: preview of slice alignment with current slices
+
+        #Code similar to get_active_image_selected_data_slice()
+        curData = self.w_setselect.get_active_image_selected_data()
+
+        if curData is None:
+            raise ValueError("No data")
+        
+        if curData.ndim!=3:
+            raise ValueError("Data is not 3-dimensional. This plugin only works with 3D data")
+        
+        dims0 = self.viewer.dims
+        nslice = dims0.current_step[0] #Gets the slice number that is currently being viewed, 1st index is the slice number
+        if nslice==curData.shape[0]:
+            raise ValueError("Cannot use this button with the last slice.")
+        
+        order0 = dims0.order[0] #Gets the axis (or plane), that the Viewer is currently viewing
+        if order0 != 0: #z
+            ValueError("Stack alignment only works along z direction. Please change visualisation to XY plane and ndisplay=2 for this button to work.")
+
+        data_2slice = curData[nslice:nslice+2, :,:]
+
+        p0= self.get_UI_SA_parameters()
+
+        res, _= slice_alignment.align_stack1(data_2slice,
+                                          p0['method'],
+                                          d_to_dmedian_perc_filt=p0['d2dmedian'],
+                                          rel_dist_to_second_match=p0['reldist2match']
+                                          )
+
+        if not res is None:
+            self.viewer.add_image(res, name="stack-align preview")
+
+
+    def get_UI_SA_parameters(self):
+        sa_method = slice_alignment.ALIGNMENT_METHOD_DEFAULT
+        sa_method['translation'] = self.chkbxTranslate.isChecked()
+        #sa_method['affine'] = self.chkbxAffine.isChecked()
+        sa_method['linear'] = self.chkbxLinear.isChecked()
+        sa_method['rotation'] = self.chkbxRotation.isChecked()
+        sa_method['shearing_x'] = self.chkbxShearX.isChecked()
+        sa_method['shearing_y'] = self.chkbxShearY.isChecked()
+        sa_method['scaling'] = self.chkbxScaling.isChecked()
+        sa_method['stretching_x'] = self.chkbxStretchX.isChecked()
+        sa_method['stretching_y'] = self.chkbxStretchY.isChecked()
+
+        d2dmedian = self.spb_SliceAlign_RelDistToDMedian.value()
+        reldist2match = self.spb_SliceAlign_SecMatchRelFDistFilt.value()
+
+        return {'method':sa_method,'d2dmedian':d2dmedian, 'reldist2match':reldist2match}
+                
 
     def hello_World(self):
         #prints on the console something enlighting. Only used in CI automated tests
