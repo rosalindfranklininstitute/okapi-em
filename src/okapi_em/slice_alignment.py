@@ -165,6 +165,12 @@ def residual(ref, new, method):
         return np.append(rx, ry)
     return r
 
+def residual1(ref, new, method):
+    def r(t):
+        r = transform(method, t, new) - ref
+        return r
+    return r
+
 def setInitialandBounds(method, margin_t=200, margin_a=0.01):
     """ Sets initial vallues of params depending on the optimization required and bounds
     margin_t sets that variation allowed in translation
@@ -292,6 +298,11 @@ class cAffineTransform():
             a new point (xr,yr) that is the tranformed of [x,y]
         '''
         #point being (x,y)
+
+        #Check point is valid
+        if len(point)!=2:
+            raise ValueError(f"point is not valid of length 2. point:{point}")
+
         x0,y0= point
 
         x1 = self.lintransf[0,0] * x0 + self.lintransf[0,1] * y0 + self.transltransf[0]
@@ -351,7 +362,11 @@ def align_stack(image_sequence, method, callbk_tick_fn=None):
         matches = featureMatchingDS(ref, new)
         #print(f"len(matches): {len(matches)}")
         #print(f"len(matches[0]): {len(matches[0])}")
+        #print(f"matches:{matches}")
+
         if len(matches[0])>0:
+            t0, bounds = setInitialandBounds(method)
+
             x_ref = matches[0][:, 0, 0]
             y_ref = matches[0][:, 0, 1]
             coor_ref = [x_ref, y_ref]
@@ -361,7 +376,6 @@ def align_stack(image_sequence, method, callbk_tick_fn=None):
             coor_new = [x_new, y_new]
         
             #find optimal transformation
-            t0, bounds = setInitialandBounds(method)
             res = least_squares(residual(coor_ref, coor_new, method), t0, bounds=bounds)
             print('Optimisation result: ')
             print('Cost: ', res.cost)
@@ -470,6 +484,199 @@ def align_stack(image_sequence, method, callbk_tick_fn=None):
     return image_sequence_res
 
 
+def align_stack1(image_sequence, method, *, d_to_dmedian_perc_filt = 0.1, rel_dist_to_second_match=0.65 , callbk_tick_fn=None):
+    '''
+    Aligns a 3D stack along the z-axis using the SIFT aligment method.
+    Compared with the align_stack it uses the new class cFeatureMatching for improved speed
+
+    Args:
+        image_sequence: a 3D numpy array with the images (greyscale) to be aligned along the X plane
+
+        method: a dictionary that sets the alignement method, like following:
+            'translation':True,
+            'rotation':False, 'shearing_x':True, 'shearing_y':False,
+            'scaling':False, 'stretching_x':False, 'stretching_y':True, 
+            'affine':False 
+
+            'translation' Can be overriden by affine setting below
+            Either 'rotation', 'shearing_x' or 'shearing_y' . If rotation is true the shearings are ignored
+            Either 'scaling', 'stretching_x' or 'stretching_y'. If scaling is true, the stretchings are ignored
+            'affine'. This setting mean that all parameters in the affine matrix are free to be optimized for alignement.
+                    If affine is true all the others are ignored.
+    
+        callbk_tick_fn: call back function that will be called between iterations
+
+    Returns:
+        The 3D stack aligned data.
+        It is likely to be larger in pixels along the XY plane to compensate for the translation and other transforms
+
+    Estimated number of callbacks = (nslices-1) + 3 + nslices = 2*nslices +2
+        
+    '''
+
+    #Check image_sequence is ok
+    if len(image_sequence)<=1:
+        raise ValueError("not enough elements in image_sequence")
+    else:
+        if image_sequence[0].ndim!=2:
+            raise ValueError(f"Element in stack is not 2D, it has {image_sequence[0].ndim} dims")
+
+    #prepare list of transformation matrice and canvas
+    notransf_affine_matrix = np.float32([[1, 0, 0], [0, 1, 0]])
+    aff_transf_0 = cAffineTransform.from2x3mat(notransf_affine_matrix) #no transform, identity and no translation
+    mats = [aff_transf_0]
+    mats_raw = [notransf_affine_matrix] #Accumulate raw matrices
+
+    #match each image with the previous image as reference
+    #Initialize class
+    cFeatureMatching0 = cFeatureMatching(image_sequence)
+
+    for i in range(len(image_sequence) - 1):
+        ref = image_sequence[i]
+        new = image_sequence[i + 1]
+        print("---------------------------------------")
+        print(f'Matching slice {i} and slice {i+1} ...')    
+        
+        matching_transform_failed=False
+        #feature matching
+        matches = cFeatureMatching0.featureMatchingDS(i, i+1,
+                        d_to_dmedian_perc_filt=d_to_dmedian_perc_filt,
+                        rel_dist_to_second_match= rel_dist_to_second_match)
+        #print(f"matches: {matches}")
+
+        #Separates coordinates
+        # 2d array with pairs of coordinates [x,y] in rows
+        coords0, coords1 = matches
+
+        nmatches = len(coords0)
+        if nmatches<=0:
+            print ("No matches. No optimization will be applied. Consider adjusting filter parameters.")
+            matching_transform_failed=True
+        elif nmatches==1:
+            print ("Only 1 feature match. Consider adjusting filter parameters.")
+            matching_transform_failed=True
+
+        else:
+            #find optimal transformation
+            t0, bounds = setInitialandBounds(method)
+
+            #Organise data for optimization
+            x_ref = coords0[:, 0]
+            y_ref = coords0[:, 1]
+            coor_ref = [x_ref, y_ref]
+
+            x_new = coords1[:, 0]
+            y_new = coords1[:, 1]
+            coor_new = [x_new, y_new]
+
+            res = least_squares(residual(coor_ref, coor_new, method), t0, bounds=bounds)
+            
+            print('Optimisation result: ')
+            print('Cost: ', res.cost)
+            print('Message: ', res.message)
+            print('Success: ', res.success)
+            print('Parameters: ', res.x)
+        
+            if not res.success:
+                matching_transform_failed=True
+
+        if not matching_transform_failed:
+            T, affine, translate = findMatrix(method, res.x)
+            T1 = cAffineTransform.from2x3mat(T)
+        else:
+            T1= aff_transf_0.copy() #Use the identity
+            #Use last one calculated
+            #T1 = mats[-1].copy()
+            T= notransf_affine_matrix.copy()
+
+        mats.append(T1) #Stores affine transform, it will be applied later
+        mats_raw.append(T)
+
+        if not callbk_tick_fn is None:
+            callbk_tick_fn()
+
+    print("Completed")
+    print("Accumulating transforms along the stack")
+    mat_accum = [aff_transf_0] #First image transform
+    mat0 = aff_transf_0
+    for i in range(1,len(mats)):
+        mat1 = mat_accum[i-1].accumulate(mats[i]) #Calculate new matrix
+        mat_accum.append(mat1)
+        mat0=mat1
+    
+    print('Completed calculation of accumulation transform matrices.')
+
+    if not callbk_tick_fn is None:
+            callbk_tick_fn()
+
+    canvas = []
+    #output = []
+
+    for T in mat_accum:
+        #calculate image size so that all images are completely on the canvas
+        width_new, length_new = new.shape
+        width_ref, length_ref = ref.shape
+        width = max(width_new, width_ref)
+        length = max(length_new, length_ref)
+        
+        before_points = np.float32([[0, 0], [0, width], [length, width], [length, 0]]).reshape(-1, 1, 2)
+        #after_points = cv.transform(before_points, T)
+        after_points = cv.transform(before_points, T.getAffTransfAs3x2mat() ) #  we may not need the cv.transform but we can maybe use the applyToPoint function
+        
+        #LMAP: I am not really sure what is going on below
+        # It appears that list_of_points is being assigned values like before_points
+        # and then a new dimension added to include after_points
+        # Nevertheles: it appears to be working, for the next step
+        list_of_points = np.float32([[0, 0], [0, width], [length, width], [length, 0]]).reshape(-1, 1, 2)
+        list_of_points = np.append(list_of_points, after_points, axis=0)
+        
+        [x_minT, y_minT] = np.int32(list_of_points.min(axis=0).ravel() - 0.5)
+        [x_maxT, y_maxT] = np.int32(list_of_points.max(axis=0).ravel() + 0.5)
+        
+        canvas.append([x_minT, y_minT, x_maxT, y_maxT])
+        
+    x_min = min(canvas[i][0] for i in range(len(canvas)))
+    y_min = min(canvas[i][1] for i in range(len(canvas)))
+    x_max = max(canvas[i][2] for i in range(len(canvas)))    
+    y_max = max(canvas[i][3] for i in range(len(canvas)))
+    
+    if not callbk_tick_fn is None:
+            callbk_tick_fn()
+
+    ysize = y_max - y_min
+    xsize = x_max - x_min
+
+    translation_distT = [-x_min, -y_min]
+    print(f'translation_distT:{translation_distT} , need to be added to the transform')
+
+    
+    for i0 in range(len(mat_accum)):
+        mat_accum[i0].addTransl(translation_distT)
+
+    if not callbk_tick_fn is None:
+        callbk_tick_fn()
+
+    print('Beggining applying transformations to each image in the stack')
+
+    image_sequence_res = np.zeros( (len(image_sequence), ysize,xsize), dtype=image_sequence.dtype)
+
+    for i in range(len(image_sequence)):
+        mat0 = mat_accum[i].getAffTransfAs3x2mat()
+        image_t = cv.warpAffine(image_sequence[i], mat0, (xsize, ysize))
+        #plt.imsave(f'../sequence/{i + 1}.jpg', image_t, cmap='gray')
+        #output.append(image_t)
+        image_sequence_res[i,:,:] = image_t
+
+        if not callbk_tick_fn is None:
+            callbk_tick_fn()
+
+    print('Alignment completed.')
+
+    # Returning  new image sequence and
+    # affine matrices used between slices in case user wants to plot
+    return image_sequence_res, mats_raw
+
+
 class cFeatureMatching():
     """
     Class to handle feature matching.
@@ -488,12 +695,12 @@ class cFeatureMatching():
         self.kps = []
         self.dss = []
 
-        for im0 in image_sequence():
+        for im0 in image_sequence:
             kp0, ds0 = self._sift.detectAndCompute(im0,None)
             self.kps.append(kp0)
             self.dss.append(ds0)
     
-    def featureMatchingDS(self, idx0, idx1, d_to_dmedian_perc_filt = 0.1, rel_dist_to_second_match=0.65):
+    def featureMatchingDS(self, idx0, idx1, d_to_dmedian_perc_filt = 0.05, rel_dist_to_second_match=0.65):
         """
         idx0, idx1 are indexes of the images to compare
         Returns matching points in first and second image
@@ -503,7 +710,7 @@ class cFeatureMatching():
         """
         
         #Check indices are valid
-        if idx0>=len(self.kps1) or idx0<0 or idx1>len(self.kps1) or idx1<0 or idx0==idx1:
+        if idx0>=len(self.kps) or idx0<0 or idx1>len(self.kps) or idx1<0 or idx0==idx1:
             raise ValueError(f"idx0:{idx0} or idx1:{idx1} are not valid for number of entries:{len(self.kps1)}.")
         
         if rel_dist_to_second_match<=0 or rel_dist_to_second_match>=1:
