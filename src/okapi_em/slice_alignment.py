@@ -152,7 +152,7 @@ def transform(method, param, points):
     # Use findMatrix code
     T, linearT,translateT = findMatrix(method, param)
 
-    myAff = affineTransform(linearT,translateT)
+    myAff = cAffineTransform(linearT,translateT)
     #Apply matrix to points
     p_res=myAff.applyToPoint(points)
     return p_res
@@ -221,7 +221,7 @@ def setInitialandBounds(method, margin_t=200, margin_a=0.01):
 
     return params_init, bounds
 
-class affineTransform():
+class cAffineTransform():
     '''
     Class for affine transforms,
     typically a matrix for rotation and/or skewing
@@ -251,7 +251,7 @@ class affineTransform():
         '''
         lintransf = mat[:, :2].astype(np.float32)
         transltransf = mat[:, 2].astype(np.float32)
-        return affineTransform(lintransf, transltransf)
+        return cAffineTransform(lintransf, transltransf)
 
     def getAffTransfAs3x2mat(self):
         '''
@@ -273,7 +273,7 @@ class affineTransform():
         '''
         lintransf_res = np.matmul( self.lintransf, affinetransform2.lintransf)
         transltransf_res = self.transltransf + affinetransform2.transltransf
-        return affineTransform(lintransf_res, transltransf_res)
+        return cAffineTransform(lintransf_res, transltransf_res)
     
 
     def addTransl(self, transl):
@@ -303,7 +303,7 @@ class affineTransform():
         '''
         Makes a copy of itself
         '''
-        return affineTransform(self.lintransf, self.transltransf)
+        return cAffineTransform(self.lintransf, self.transltransf)
 
 
 def align_stack(image_sequence, method, callbk_tick_fn=None):
@@ -336,7 +336,7 @@ def align_stack(image_sequence, method, callbk_tick_fn=None):
     '''
 
     #prepare list of transformation matrice and canvas 
-    aff_transf_0 = affineTransform.from2x3mat(np.float32([[1, 0, 0], [0, 1, 0]])) #no transform, identity and no translation
+    aff_transf_0 = cAffineTransform.from2x3mat(np.float32([[1, 0, 0], [0, 1, 0]])) #no transform, identity and no translation
     mats = [aff_transf_0]
 
     #match each image with the previous image as reference
@@ -376,7 +376,7 @@ def align_stack(image_sequence, method, callbk_tick_fn=None):
 
         if not matching_failed:
             T, affine, translate = findMatrix(method, res.x)
-            T1 = affineTransform.from2x3mat(T)
+            T1 = cAffineTransform.from2x3mat(T)
         else:
             T1= aff_transf_0.copy() #Use the identity
             #Use last one calculated
@@ -470,3 +470,94 @@ def align_stack(image_sequence, method, callbk_tick_fn=None):
     return image_sequence_res
 
 
+class cFeatureMatching():
+    """
+    Class to handle feature matching.
+    It tries to be more efficient than the function based method by precalculating
+    the SIFT key points and descriptors for the volumes
+    """
+
+    def __init__(self, image_sequence):
+        #TODO: Check image is valid and ok to run with CV2, otherwise convert
+
+        self.image_sequence = image_sequence
+
+        self._sift = cv.SIFT_create()
+
+        #Precalculate kp and ds for all image sequences
+        self.kps = []
+        self.dss = []
+
+        for im0 in image_sequence():
+            kp0, ds0 = self._sift.detectAndCompute(im0,None)
+            self.kps.append(kp0)
+            self.dss.append(ds0)
+    
+    def featureMatchingDS(self, idx0, idx1, d_to_dmedian_perc_filt = 0.1, rel_dist_to_second_match=0.65):
+        """
+        idx0, idx1 are indexes of the images to compare
+        Returns matching points in first and second image
+        using criteria set with d_to_dmedian_perc_filt and rel_dist_to_second_match
+
+        TODO: explain parameters, d_to_dmedian_perc_filt and rel_dist_to_second_match
+        """
+        
+        #Check indices are valid
+        if idx0>=len(self.kps1) or idx0<0 or idx1>len(self.kps1) or idx1<0 or idx0==idx1:
+            raise ValueError(f"idx0:{idx0} or idx1:{idx1} are not valid for number of entries:{len(self.kps1)}.")
+        
+        if rel_dist_to_second_match<=0 or rel_dist_to_second_match>=1:
+            raise ValueError("rel_dist_to_second_match is not valid")
+        
+        #Do matching using opencv BFMatcher
+        bf = cv.BFMatcher() #Brute Force description matcher using default settings
+        
+        ds0= self.dss[idx0]
+        ds1 = self.dss[idx1]
+        matches = bf.knnMatch(ds0,ds1,k=2) #Gets 2 matches for each query descriptor
+
+        #Filters by descriptor distance
+        # Filters best matches by distance by its certainty by comparing with second best match distance
+        # If there is another match that is similar, don't take it into account
+        good_no_list = []
+        for m, n in matches:
+            if m.distance < rel_dist_to_second_match*n.distance:
+                #good.append([m])
+                good_no_list.append(m)
+        
+        kp0 = self.kps[idx0]
+        kp1 = self.kps[idx1]
+
+        #Gets coordinates of filtered points in first and second image
+        coords0 = np.float32([kp0[m.queryIdx].pt for m in good_no_list])
+        coords1 = np.float32([kp1[m.trainIdx].pt for m in good_no_list])
+
+        diff_vects = coords1-coords0
+
+        slope_diff = np.arctan2(diff_vects[:,1], diff_vects[:,0])
+
+        dist_diff = np.linalg.norm(diff_vects, axis=1)
+        dist_diff_median = np.median(dist_diff)
+
+        dist_select = np.logical_and(dist_diff > dist_diff_median * (1.0-d_to_dmedian_perc_filt), 
+                                     dist_diff < dist_diff_median * (1.0+d_to_dmedian_perc_filt))
+        
+        #Filter by the intensity of the points
+        coords0_int = coords0.astype(int)
+        img_values0 = [self.image_sequence[idx0][x, y] for y, x in coords0_int]
+        coords1_int = coords1.astype(int)
+        img_values1 = [self.image_sequence[idx1][x, y] for y, x in coords1_int]
+
+        #Create mask by looking at pixel values between points need to have intensity >1
+        points_select = np.logical_and(np.array(img_values0) > 1, np.array(img_values1) > 1)
+
+        #Selection mask based from the two filters dist_select and points_select
+        select = dist_select * points_select
+
+        # matched_filtered = np.array(good_no_list)[select] #not needed unless plotting
+        coords0_filt = coords0[select]    
+        coords1_filt = coords1[select]
+
+        print(f'{len(coords0_filt)} good matches found')
+
+        return coords0_filt, coords1_filt
