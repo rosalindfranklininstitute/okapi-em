@@ -91,7 +91,6 @@ class MainQWidget(QWidget):
         self.rbDirFFT = QRadioButton("Directional band-pass FFT filter")
         self.rbDirFFT.setChecked(False)
         self.t0_vbox0.addWidget( self.rbDirFFT)
-        #TODO, may need 'connection'
         #Options for this filter are contained in the next box grpBox1
         self.grpBox1 = QGroupBox("") #Box, no title, radiobutton does it
         #self.tabChargeSuppr.addWidget(self.grpBox1)
@@ -438,7 +437,7 @@ class MainQWidget(QWidget):
         if data3d.ndim==3:
 
             #Ensure data3d is napari and not dask
-            data3d = np.array(data3d)
+            data3d = np.asarray(data3d)
 
             #Estimate number of iterations for progress bar
             nslices = data3d.shape[0]

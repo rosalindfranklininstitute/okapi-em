@@ -20,7 +20,8 @@ limitations under the License.
 import numpy as np
 import cv2 as cv #opencv package
 from scipy.optimize import least_squares
-
+from skimage.util import img_as_ubyte #Needed to convert to opencv compatible format
+from skimage.exposure import rescale_intensity
 
 ALIGNMENT_METHOD_DEFAULT = {
     'translation':True,
@@ -31,6 +32,8 @@ ALIGNMENT_METHOD_DEFAULT = {
 
 
 def featureMatchingDS(img1, img2):
+    print("Deprecation warning. Please use the cFeatureMatching class instead")
+
     # Initiate SIFT detector
     sift = cv.SIFT_create()
     # find the keypoints and descriptors with SIFT
@@ -38,8 +41,6 @@ def featureMatchingDS(img1, img2):
     kp2, des2 = sift.detectAndCompute(img2,None)
     #This is probably unnecessary to do it like this
     # In a stack, most images will have SIFT computed twice
-    # TODO: Create a class that is initialised with image stack
-    # and precalculates Sift's keypoints and descriptors
 
     # BFMatcher with default params
     bf = cv.BFMatcher()
@@ -507,11 +508,12 @@ def align_stack1(image_sequence, method, *, d_to_dmedian_perc_filt = 0.1, rel_di
         callbk_tick_fn: call back function that will be called between iterations
 
     Returns:
-        A tuple containing
-            The 3D stack aligned data.It is likely to be larger in pixels along
-            the XY plane to compensate for the translation and other transforms
+        A tuple (image_sequence_res, mats_raw)
 
-            Affine matrices transforms used between slices
+            image_sequence_res: The 3D stack aligned data.It is likely to be larger in pixels along
+                the XY plane to compensate for the translation and other transforms
+
+            mats_raw: Affine matrices transforms used between slices
 
     Estimated number of callbacks = (nslices-1) + 3 + nslices = 2*nslices +2
         
@@ -689,8 +691,22 @@ class cFeatureMatching():
 
     def __init__(self, image_sequence):
         #TODO: Check image is valid and ok to run with CV2, otherwise convert
+        
+        if len(image_sequence)<=1:
+            ValueError(f"Image_sequence has no slices. len(image_sequence):{len(image_sequence)}")
 
-        self.image_sequence = image_sequence
+        if image_sequence[0].ndim!=2:
+            ValueError(f"First slice has the wrong dimensions (should be 2). image_sequence[0].ndim={image_sequence[0].ndim}")
+        
+        #Ensure input is numpy compatible format
+        dtemp=np.asarray(image_sequence)
+
+        if not isinstance(dtemp,np.uint8):
+            #convert
+            data_rescale = rescale_intensity(dtemp, out_range=(0.0,1.0)) #Rescale to reange 0 to 1, for img_as_ubyte() conversion to succeed
+            dtemp = img_as_ubyte(data_rescale) #note that negative values will be clipped
+
+        self.image_sequence = dtemp
 
         self._sift = cv.SIFT_create()
 
