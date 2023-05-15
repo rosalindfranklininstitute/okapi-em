@@ -485,7 +485,7 @@ def align_stack(image_sequence, method, callbk_tick_fn=None):
     return image_sequence_res
 
 
-def align_stack1(image_sequence, method, *, d_to_dmedian_perc_filt = 0.1, rel_dist_to_second_match=0.65 , callbk_tick_fn=None):
+def align_stack1(image_sequence, method, *, d2dmedian_ratio = 0.1, ratio_test=0.80 , callbk_tick_fn=None):
     '''
     Aligns a 3D stack along the z-axis using the SIFT aligment method.
     Compared with the align_stack it uses the new class cFeatureMatching for improved speed
@@ -506,6 +506,9 @@ def align_stack1(image_sequence, method, *, d_to_dmedian_perc_filt = 0.1, rel_di
                     If affine is true all the others are ignored.
     
         callbk_tick_fn: call back function that will be called between iterations
+
+        d2dmedian_ratio and ratio_test are parematers passed to the featureMatchingDS function
+            and are used to filter feature matching
 
     Returns:
         A tuple (image_sequence_res, mats_raw)
@@ -534,7 +537,7 @@ def align_stack1(image_sequence, method, *, d_to_dmedian_perc_filt = 0.1, rel_di
 
     #match each image with the previous image as reference
     #Initialize class
-    cFeatureMatching0 = cFeatureMatching(image_sequence)
+    cFeatureMatching0 = cFeatureMatching(image_sequence, callbk_tick_fn=callbk_tick_fn)
 
     for i in range(len(image_sequence) - 1):
         ref = image_sequence[i]
@@ -545,8 +548,8 @@ def align_stack1(image_sequence, method, *, d_to_dmedian_perc_filt = 0.1, rel_di
         matching_transform_failed=False
         #feature matching
         matches = cFeatureMatching0.featureMatchingDS(i, i+1,
-                        d_to_dmedian_perc_filt=d_to_dmedian_perc_filt,
-                        rel_dist_to_second_match= rel_dist_to_second_match)
+                        d2dmedian_ratio=d2dmedian_ratio,
+                        ratio_test= ratio_test)
         #print(f"matches: {matches}")
 
         #Separates coordinates
@@ -689,8 +692,8 @@ class cFeatureMatching():
     the SIFT key points and descriptors for the volumes
     """
 
-    def __init__(self, image_sequence):
-        #TODO: Check image is valid and ok to run with CV2, otherwise convert
+    def __init__(self, image_sequence, callbk_tick_fn=None):
+        #Check image is valid and ok to run with CV2, otherwise convert
         
         if len(image_sequence)<=1:
             ValueError(f"Image_sequence has no slices. len(image_sequence):{len(image_sequence)}")
@@ -701,10 +704,23 @@ class cFeatureMatching():
         #Ensure input is numpy compatible format
         dtemp=np.asarray(image_sequence)
 
-        if not isinstance(dtemp,np.uint8):
-            #convert
-            data_rescale = rescale_intensity(dtemp, out_range=(0.0,1.0)) #Rescale to reange 0 to 1, for img_as_ubyte() conversion to succeed
-            dtemp = img_as_ubyte(data_rescale) #note that negative values will be clipped
+        b_doconversion=False
+        min=0
+        max=0
+        m=0
+
+        #if not isinstance(dtemp,np.uint8):
+        if dtemp.dtype!='uint8':
+            print("data is not uint8. Will convert")
+            b_doconversion=True
+            min=dtemp.min()
+            max=dtemp.max()
+
+            if max==min:
+                raise ValueError("Intensities are constant, cannot do alignment.")
+            
+            print(f"value min:{min}, max:{max}")
+            m=255/(max-min) # precalculate
 
         self.image_sequence = dtemp
 
@@ -714,25 +730,43 @@ class cFeatureMatching():
         self.kps = []
         self.dss = []
 
-        for im0 in image_sequence:
+        print("Precalculating SIFT descriptors in images.")
+        for i,im0 in enumerate(image_sequence):
+            print(f"image slice:{i}/ {len(image_sequence)-1}")
+
+            if b_doconversion:
+                im0= ((im0-min)*m).astype(np.uint8)
+
             kp0, ds0 = self._sift.detectAndCompute(im0,None)
             self.kps.append(kp0)
             self.dss.append(ds0)
+
+            if not callbk_tick_fn is None:
+                callbk_tick_fn()
     
-    def featureMatchingDS(self, idx0, idx1, d_to_dmedian_perc_filt = 0.05, rel_dist_to_second_match=0.65):
+    def featureMatchingDS(self, idx0, idx1, d2dmedian_ratio = 0.05, ratio_test=0.80):
         """
         idx0, idx1 are indexes of the images to compare
         Returns matching points in first and second image
         using criteria set with d_to_dmedian_perc_filt and rel_dist_to_second_match
 
-        TODO: explain parameters, d_to_dmedian_perc_filt and rel_dist_to_second_match
+        ratio_test is the ratio test to be applied to each set of two mathcing features
+        as described in D. Lowe paper (https://citeseerx.ist.psu.edu/doc/10.1.1.73.2924).
+        It adjusts the "certainty" of matching descriptors
+        between pairs. Higher value ensures more certainty, but also filters more matches.
+
+        d2dmedian_ratio adjusts how the matching features are filtered based in their
+        coordinate distance and relative to their median.
+        A higher value results in less matching features to be filtered.
+        If image stack has significant drift,
+        this value should be increased to detect more matches.
         """
         
         #Check indices are valid
         if idx0>=len(self.kps) or idx0<0 or idx1>len(self.kps) or idx1<0 or idx0==idx1:
             raise ValueError(f"idx0:{idx0} or idx1:{idx1} are not valid for number of entries:{len(self.kps1)}.")
         
-        if rel_dist_to_second_match<=0 or rel_dist_to_second_match>=1:
+        if ratio_test<=0 or ratio_test>=1:
             raise ValueError("rel_dist_to_second_match is not valid")
         
         #Do matching using opencv BFMatcher
@@ -747,10 +781,14 @@ class cFeatureMatching():
         # If there is another match that is similar, don't take it into account
         good_no_list = []
         for m, n in matches:
-            if m.distance < rel_dist_to_second_match*n.distance:
+            if m.distance < ratio_test*n.distance:
                 #good.append([m])
                 good_no_list.append(m)
         
+        if len(good_no_list)==0:
+            print("No good matches found")
+            return [], []
+
         kp0 = self.kps[idx0]
         kp1 = self.kps[idx1]
 
@@ -760,13 +798,13 @@ class cFeatureMatching():
 
         diff_vects = coords1-coords0
 
-        slope_diff = np.arctan2(diff_vects[:,1], diff_vects[:,0])
+        #slope_diff = np.arctan2(diff_vects[:,1], diff_vects[:,0])
 
         dist_diff = np.linalg.norm(diff_vects, axis=1)
         dist_diff_median = np.median(dist_diff)
 
-        dist_select = np.logical_and(dist_diff > dist_diff_median * (1.0-d_to_dmedian_perc_filt), 
-                                     dist_diff < dist_diff_median * (1.0+d_to_dmedian_perc_filt))
+        dist_select = np.logical_and(dist_diff > dist_diff_median * (1.0-d2dmedian_ratio), 
+                                     dist_diff < dist_diff_median * (1.0+d2dmedian_ratio))
         
         #Filter by the intensity of the points
         coords0_int = coords0.astype(int)

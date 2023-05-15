@@ -209,27 +209,27 @@ class MainQWidget(QWidget):
         #parameters to control slice alignment feature matching
         qgrid_adj_params = QGridLayout()
         self.tabSliceAlignment_l.addLayout(qgrid_adj_params)
-        label_slice_align0 = QLabel("2nd-feat-rel-dist:")
+        label_slice_align0 = QLabel("Ratio test:")
         qgrid_adj_params.addWidget(label_slice_align0,0,0)
-        self.spb_SliceAlign_SecMatchRelFDistFilt=QDoubleSpinBox()
-        self.spb_SliceAlign_SecMatchRelFDistFilt.setMinimum(0.1)
-        self.spb_SliceAlign_SecMatchRelFDistFilt.setMaximum(1.0)
-        self.spb_SliceAlign_SecMatchRelFDistFilt.setDecimals(2)
-        self.spb_SliceAlign_SecMatchRelFDistFilt.setSingleStep(0.1)
-        self.spb_SliceAlign_SecMatchRelFDistFilt.setValue(0.65)
-        self.spb_SliceAlign_SecMatchRelFDistFilt.setToolTip("Second feature match relative distance criteria filter.\nHigher value gets more matches but lower match confidence.\nValues from 0.1 to 1.0.")
-        qgrid_adj_params.addWidget(self.spb_SliceAlign_SecMatchRelFDistFilt, 0,1)
+        self.spb_SliceAlign_RatioTest=QDoubleSpinBox()
+        self.spb_SliceAlign_RatioTest.setMinimum(0.1)
+        self.spb_SliceAlign_RatioTest.setMaximum(1.0)
+        self.spb_SliceAlign_RatioTest.setDecimals(2)
+        self.spb_SliceAlign_RatioTest.setSingleStep(0.1)
+        self.spb_SliceAlign_RatioTest.setValue(0.80)
+        self.spb_SliceAlign_RatioTest.setToolTip("Ratio test filters matching features based in the ratio to second match score.\nHigher value gets more matches but lower match confidence.\nValues from 0.1 to 1.0.")
+        qgrid_adj_params.addWidget(self.spb_SliceAlign_RatioTest, 0,1)
 
-        label_d_to_dmedian_perc_filt = QLabel("rel-dist to median")
-        qgrid_adj_params.addWidget(label_d_to_dmedian_perc_filt,1,0)
-        self.spb_SliceAlign_RelDistToDMedian=QDoubleSpinBox()
-        self.spb_SliceAlign_RelDistToDMedian.setMinimum(0.01)
-        self.spb_SliceAlign_RelDistToDMedian.setMaximum(10.0)
-        self.spb_SliceAlign_RelDistToDMedian.setDecimals(2)
-        self.spb_SliceAlign_RelDistToDMedian.setSingleStep(0.01)
-        self.spb_SliceAlign_RelDistToDMedian.setValue(0.05)
-        self.spb_SliceAlign_RelDistToDMedian.setToolTip("Second feature match relative distance criteria filter.\nHigher value gets more matches but less precision.\nValues from 0.001 to 10.0. default 0.05")
-        qgrid_adj_params.addWidget(self.spb_SliceAlign_RelDistToDMedian, 1,1)
+        label_d2dmedian_ratio = QLabel("D2Dmedian ratio:")
+        qgrid_adj_params.addWidget(label_d2dmedian_ratio,1,0)
+        self.spb_SliceAlign_D2Dmedian_Ratio=QDoubleSpinBox()
+        self.spb_SliceAlign_D2Dmedian_Ratio.setMinimum(0.01)
+        self.spb_SliceAlign_D2Dmedian_Ratio.setMaximum(10.0)
+        self.spb_SliceAlign_D2Dmedian_Ratio.setDecimals(2)
+        self.spb_SliceAlign_D2Dmedian_Ratio.setSingleStep(0.01)
+        self.spb_SliceAlign_D2Dmedian_Ratio.setValue(0.05)
+        self.spb_SliceAlign_D2Dmedian_Ratio.setToolTip("Distance to median ratio filter.\nHigher value gets more matches but less precision.\nValues from 0.001 to 10.0. default 0.05")
+        qgrid_adj_params.addWidget(self.spb_SliceAlign_D2Dmedian_Ratio, 1,1)
 
         self.btn_testSA=QPushButton("Test/preview slice alignment")
         qgrid_adj_params.addWidget(self.btn_testSA, 2,0)
@@ -433,55 +433,60 @@ class MainQWidget(QWidget):
         res=None
 
         data3d = self.w_setselect.get_active_image_selected_data()
+        if  data3d is None:
+            raise ValueError("Could not get active image data.")
 
-        if data3d.ndim==3:
+        if data3d.ndim!=3:
+            raise ValueError("Data selected is not 3D")
+        
 
-            #Ensure data3d is napari and not dask
-            data3d = np.asarray(data3d)
+        #Ensure data3d is napari and not dask
+        data3d = np.asarray(data3d)
 
-            #Estimate number of iterations for progress bar
-            nslices = data3d.shape[0]
-            niterations = 2*(nslices+1)
+        #Estimate number of iterations for progress bar
+        nslices = data3d.shape[0]
+        niterations = 2*(nslices+1) #TODO: Proably should be 2nslices
 
-            pbr=progress(total=niterations,desc="Alignment progress")
+        pbr=progress(total=niterations,desc="Alignment progress")
 
-            def callbkfn():
-                pbr.update(1)
-                pbr.refresh()
+        def callbkfn():
+            pbr.update(1)
+            pbr.refresh()
 
-            #Show or not show Activity dialog?
-            #activ_dialog=self.viewer.window._qt_viewer.window()._activity_dialog #Warning this will be unavailable in the future
-            #activ_dialog.show()
+        #Show or not show Activity dialog?
+        #activ_dialog=self.viewer.window._qt_viewer.window()._activity_dialog #Warning this will be unavailable in the future
+        #activ_dialog.show()
 
-            #res= slice_alignment.align_stack(data3d, slice_alignment.ALIGNMENT_METHOD_DEFAULT,callbkfn)
-            # sa_method = slice_alignment.ALIGNMENT_METHOD_DEFAULT
+        #res= slice_alignment.align_stack(data3d, slice_alignment.ALIGNMENT_METHOD_DEFAULT,callbkfn)
+        # sa_method = slice_alignment.ALIGNMENT_METHOD_DEFAULT
 
-            # sa_method['translation'] = self.chkbxTranslate.isChecked()
-            # #sa_method['affine'] = self.chkbxAffine.isChecked()
-            # sa_method['linear'] = self.chkbxLinear.isChecked()
-            # sa_method['rotation'] = self.chkbxRotation.isChecked()
-            # sa_method['shearing_x'] = self.chkbxShearX.isChecked()
-            # sa_method['shearing_y'] = self.chkbxShearY.isChecked()
-            # sa_method['scaling'] = self.chkbxScaling.isChecked()
-            # sa_method['stretching_x'] = self.chkbxStretchX.isChecked()
-            # sa_method['stretching_y'] = self.chkbxStretchY.isChecked()
+        # sa_method['translation'] = self.chkbxTranslate.isChecked()
+        # #sa_method['affine'] = self.chkbxAffine.isChecked()
+        # sa_method['linear'] = self.chkbxLinear.isChecked()
+        # sa_method['rotation'] = self.chkbxRotation.isChecked()
+        # sa_method['shearing_x'] = self.chkbxShearX.isChecked()
+        # sa_method['shearing_y'] = self.chkbxShearY.isChecked()
+        # sa_method['scaling'] = self.chkbxScaling.isChecked()
+        # sa_method['stretching_x'] = self.chkbxStretchX.isChecked()
+        # sa_method['stretching_y'] = self.chkbxStretchY.isChecked()
 
-            #res= slice_alignment.align_stack(data3d, sa_method,callbkfn)
+        #res= slice_alignment.align_stack(data3d, sa_method,callbkfn)
 
-            p0= self.get_UI_SA_parameters()
+        p0= self.get_UI_SA_parameters()
 
-            res, _= slice_alignment.align_stack1(data3d,
-                                            p0['method'],
-                                            d_to_dmedian_perc_filt=p0['d2dmedian'],
-                                            rel_dist_to_second_match=p0['reldist2match'],
-                                            callbk_tick_fn=callbkfn
-                                        )
+        res, _= slice_alignment.align_stack1(data3d,
+                                        p0['method'],
+                                        d2dmedian_ratio=p0['d2dmedian'],
+                                        ratio_test=p0['reldist2match'],
+                                        callbk_tick_fn=callbkfn
+                                    )
 
-            pbr.close()
-            #activ_dialog.hide()
+        pbr.close()
+        #activ_dialog.hide()
 
-            if not res is None:
-                self.viewer.add_image(res, name="stack aligned")
+        if not res is None:
+            self.viewer.add_image(res, name="stack aligned")
+        
 
     def btnQuollCalcFRC_onclick(self):
         #NOT USED
@@ -546,7 +551,7 @@ class MainQWidget(QWidget):
         return
 
     def btn_testSA_onclick(self):
-        #TODO: preview of slice alignment with current slices
+        #Preview of slice alignment with current slice and next
 
         #Code similar to get_active_image_selected_data_slice()
         curData = self.w_setselect.get_active_image_selected_data()
@@ -572,8 +577,8 @@ class MainQWidget(QWidget):
 
         res, _= slice_alignment.align_stack1(data_2slice,
                                           p0['method'],
-                                          d_to_dmedian_perc_filt=p0['d2dmedian'],
-                                          rel_dist_to_second_match=p0['reldist2match']
+                                          d2dmedian_ratio=p0['d2dmedian'],
+                                          ratio_test=p0['reldist2match']
                                           )
 
         if not res is None:
@@ -592,8 +597,8 @@ class MainQWidget(QWidget):
         sa_method['stretching_x'] = self.chkbxStretchX.isChecked()
         sa_method['stretching_y'] = self.chkbxStretchY.isChecked()
 
-        d2dmedian = self.spb_SliceAlign_RelDistToDMedian.value()
-        reldist2match = self.spb_SliceAlign_SecMatchRelFDistFilt.value()
+        d2dmedian = self.spb_SliceAlign_D2Dmedian_Ratio.value()
+        reldist2match = self.spb_SliceAlign_RatioTest.value()
 
         return {'method':sa_method,'d2dmedian':d2dmedian, 'reldist2match':reldist2match}
                 
@@ -659,12 +664,10 @@ class widget_ImageSetCurrentSelect(QWidget):
 
     def b_set_on_click(self):
         print("b_set_on_click()")
-        active0=self.get_active_image() #This also sets default image
-        if not active0 is None:
-            self.l_name_v.setText(active0.name)
-
-            #Check layer is image
-            #self.set_default_napari_image(active0)
+        self.set_active_image_from_nap_layers()
+        
+        #active0=self.get_active_image() #This also sets default image   
+        return
 
     def set_default_napari_image(self,nap_image):
         print("set_default_napari_image()")
@@ -675,24 +678,69 @@ class widget_ImageSetCurrentSelect(QWidget):
             print("Current active layer name is: ", nap_image.name)
             self.curImage = nap_image
             self.l_shape_v.setText(str(self.curImage.data.shape))
+        else:
+            print("Not a valid layer for Okapi-EM.")
+            self.curImage=None
+            self.l_name_v.setText("")
+            self.l_shape_v.setText("")
+        
+        return
 
     def get_active_image(self):
+        print("get_active_image()`")
+        
+        if not self.curImage is None:
+            if self.curImage in self.viewer.layers: #Ensure that image was not deleted
+                return self.curImage
+                
+        #curImage not available anymore
+
+        # try to grab an image from selected
+        self.set_active_image_from_nap_layers()
+        if not self.curImage is None:
+            return self.curImage
+
+        return None
+    
+    def set_active_image_from_nap_layers(self):
+        #Set active image from napari layers
+        print("set_active_image_from_nap_layers()")
+        
         active0=None
         if not self.viewer is None:
             active0 = self.viewer.layers.selection.active #check if any layer is active
             self.set_default_napari_image(active0)
-        else:
-            print("get_active_image(): no napari.viewer, cannot get active image")
 
-        return active0
+        else:
+            raise ValueError("No Viewer")
+
+        return
 
     def get_active_image_selected_data(self) ->ImageData:
         print("get_active_image_selected_data()")
-        if self.curImage is None:
-            self.b_set_on_click() #Does the same thing as clicking the button to set default image data
-            #return self.curImage.data
+
+        im = self.get_active_image()
+        if not im is None:
+            return self.curImage.data
         
-        return self.curImage.data
+        return None
+    
+        # if self.curImage in self.viewer.layers: #Ensure that image was not deleted
+        #     return self.curImage.data
+        # else:
+            
+        
+            # if self.curImage is None:
+            #     #Try to grab an image
+            #     self.b_set_on_click() #Does the same thing as clicking the button to set default image data
+                
+            #     if self.curImage is None: #Check if any layer is selected
+            #         #Clear selection
+
+            #         raise ValueError("Could not get active image data.")
+            #     else:
+                    
+
 
     def get_active_image_selected_data_slice(self):
         print("get_active_image_selected_data_slice()")
