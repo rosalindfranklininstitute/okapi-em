@@ -22,6 +22,7 @@ Main napari widget with data selector and tabs with the tools
 from qtpy.QtWidgets import QWidget, QTabWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox, QGridLayout
 from qtpy.QtWidgets import QRadioButton, QCheckBox,QPushButton, QLabel,QSpinBox, QTableWidget, QTableWidgetItem
 from qtpy.QtWidgets import QDoubleSpinBox, QComboBox
+from qtpy.QtCore import Qt
 
 import napari
 from napari.types import ImageData, LayerDataTuple
@@ -75,6 +76,7 @@ class MainQWidget(QWidget):
         self.ui_do_tab_SliceAlignment()
         self.ui_do_tab_ChargeSuppression()
         self.ui_do_tab_ResMeas()
+        self.ui_do_tab_Filters()
     
     def ui_do_tab_ChargeSuppression(self):
         # /tabChargeSuppr \ t0_vbox0
@@ -83,54 +85,54 @@ class MainQWidget(QWidget):
         # Tab with charge suppression filters
         # Contains FFT directional filter plus others
 
-        self.t0_vbox0 = QVBoxLayout() #Items organised vertically
-        self.tabChargeSuppr.setLayout(self.t0_vbox0)
+        t0_vbox0 = QVBoxLayout() #Items organised vertically
+        self.tabChargeSuppr.setLayout(t0_vbox0)
 
         # Filter: Directional band-pass
         # Radiobutton followed by a box with controls for this filter
         self.rbDirFFT = QRadioButton("Directional band-pass FFT filter")
         self.rbDirFFT.setChecked(False)
-        self.t0_vbox0.addWidget( self.rbDirFFT)
+        t0_vbox0.addWidget(self.rbDirFFT)
         #Options for this filter are contained in the next box grpBox1
-        self.grpBox1 = QGroupBox("") #Box, no title, radiobutton does it
-        #self.tabChargeSuppr.addWidget(self.grpBox1)
-        self.t0_vbox0.addWidget(self.grpBox1)
+        grpBox1 = QGroupBox("") #Box, no title, radiobutton does it
+        #self.tabChargeSuppr.addWidget(grpBox1)
+        t0_vbox0.addWidget(grpBox1)
 
-        self.vbox2 = QVBoxLayout()
-        self.grpBox1.setLayout(self.vbox2)
-        self.label1 = QLabel("Select cutoff frequencies")
-        self.vbox2.addWidget(self.label1)
-        self.t0_hbox = QHBoxLayout() #Horizontal layout to set low and high freq of filters
-        self.vbox2.addLayout( self.t0_hbox)
-        self.label_low = QLabel("low:")
-        self.t0_hbox.addWidget(self.label_low)
+        vbox2 = QVBoxLayout()
+        grpBox1.setLayout(vbox2)
+        label1 = QLabel("Select cutoff frequencies")
+        vbox2.addWidget(label1)
+        t0_hbox = QHBoxLayout() #Horizontal layout to set low and high freq of filters
+        vbox2.addLayout( t0_hbox)
+        label_low = QLabel("low:")
+        t0_hbox.addWidget(label_low)
         self.freqselector_low = QSpinBox()
         self.freqselector_low.setMinimum(0)
         self.freqselector_low.setMaximum(100)
         self.freqselector_low.setValue(0)
         self.freqselector_low.setSingleStep(1)
-        self.t0_hbox.addWidget(self.freqselector_low)
+        t0_hbox.addWidget(self.freqselector_low)
         self.freqselector_low.valueChanged.connect(self.freqselector_low_valueChanged)
         self.label_high = QLabel("high:")
-        self.t0_hbox.addWidget(self.label_high)
+        t0_hbox.addWidget(self.label_high)
         self.freqselector_high = QSpinBox()
         self.freqselector_high.setMinimum(0)
         self.freqselector_high.setMaximum(100)
         self.freqselector_high.setValue(5)
         self.freqselector_high.setSingleStep(1)
-        self.t0_hbox.addWidget(self.freqselector_high)
+        t0_hbox.addWidget(self.freqselector_high)
         self.freqselector_high.valueChanged.connect(self.freqselector_high_valueChanged)
 
         self.rbChafer = QRadioButton("Chafer")
         self.rbChafer.setChecked(True)
-        self.t0_vbox0.addWidget(self.rbChafer)
+        t0_vbox0.addWidget(self.rbChafer)
         self.grpBoxChafer = QGroupBox("")
-        self.t0_vbox0.addWidget(self.grpBoxChafer) #Add Chafer UI to this grpBoxChafer
+        t0_vbox0.addWidget(self.grpBoxChafer) #Add Chafer UI to this grpBoxChafer
         self.grpBoxChafer_layout = QVBoxLayout()
         self.grpBoxChafer.setLayout(self.grpBoxChafer_layout)
 
         #label data selector
-        self.w_setselectlabel = widget_ImageSetCurrentSelect(self.viewer, "Labels data source")
+        self.w_setselectlabel= widget_ImageSetCurrentSelect(self.viewer, "Labels data source")
         self.grpBoxChafer_layout.addWidget(self.w_setselectlabel)
 
         #need parameters
@@ -166,28 +168,28 @@ class MainQWidget(QWidget):
         #Need user to select labels file
 
         self.btnFFTDirFilterSlice = QPushButton("Filter (slice)")
-        self.t0_vbox0.addWidget(self.btnFFTDirFilterSlice)
+        t0_vbox0.addWidget(self.btnFFTDirFilterSlice)
         self.btnFFTDirFilterSlice.clicked.connect(self.doFFTDirFilterSlice)
 
         self.btnApply = QPushButton("Filter")
-        self.t0_vbox0.addWidget(self.btnApply)
+        t0_vbox0.addWidget(self.btnApply)
         self.btnApply.clicked.connect(self.doFFTDirFilterWhole) #Signal
 
     def ui_do_tab_SliceAlignment(self):
         # /tabSliceAlignemnt \
         self.tabSliceAlignment = QWidget()
         self.tabwidget.addTab(self.tabSliceAlignment, "Slice Alignment")
-        self.tabSliceAlignment_l = QVBoxLayout() #Items organised vertically
-        self.tabSliceAlignment.setLayout(self.tabSliceAlignment_l)
+        tabSliceAlignment_l= QVBoxLayout() #Items organised vertically
+        self.tabSliceAlignment.setLayout(tabSliceAlignment_l)
         
         self.chkbxTranslate= QCheckBox("Translation")
         self.chkbxTranslate.setChecked(True)
-        self.tabSliceAlignment_l.addWidget(self.chkbxTranslate)
+        tabSliceAlignment_l.addWidget(self.chkbxTranslate)
         self.chkbxLinear= QCheckBox("Linear all free (ov. below)")
-        self.tabSliceAlignment_l.addWidget(self.chkbxLinear)
+        tabSliceAlignment_l.addWidget(self.chkbxLinear)
 
         hl_Rot = QHBoxLayout()
-        self.tabSliceAlignment_l.addLayout(hl_Rot)
+        tabSliceAlignment_l.addLayout(hl_Rot)
         self.chkbxRotation = QCheckBox("rotation (ov. shear)")
         hl_Rot.addWidget(self.chkbxRotation)
         self.chkbxShearX = QCheckBox("shear X")
@@ -197,7 +199,7 @@ class MainQWidget(QWidget):
         hl_Rot.addWidget(self.chkbxShearY)
 
         hl_Scaling = QHBoxLayout()
-        self.tabSliceAlignment_l.addLayout(hl_Scaling)
+        tabSliceAlignment_l.addLayout(hl_Scaling)
         self.chkbxScaling = QCheckBox("scaling (ov. stretch)")
         hl_Scaling.addWidget(self.chkbxScaling)
         self.chkbxStretchX = QCheckBox("stretch x")
@@ -208,7 +210,7 @@ class MainQWidget(QWidget):
 
         #parameters to control slice alignment feature matching
         qgrid_adj_params = QGridLayout()
-        self.tabSliceAlignment_l.addLayout(qgrid_adj_params)
+        tabSliceAlignment_l.addLayout(qgrid_adj_params)
         label_slice_align0 = QLabel("Ratio test:")
         qgrid_adj_params.addWidget(label_slice_align0,0,0)
         self.spb_SliceAlign_RatioTest=QDoubleSpinBox()
@@ -237,7 +239,7 @@ class MainQWidget(QWidget):
 
         #Button to start the alignement
         self.btnSACalculate = QPushButton("Align")
-        self.tabSliceAlignment_l.addWidget(self.btnSACalculate)
+        tabSliceAlignment_l.addWidget(self.btnSACalculate)
         self.btnSACalculate.clicked.connect(self.btnSACalculate_onclick) #Signal
 
 
@@ -294,6 +296,97 @@ class MainQWidget(QWidget):
             self.quollTable=widget_OkapiemTable(self.viewer)
             quollTableContainerWidgetLayout.addWidget(self.quollTable)
 
+    def ui_do_tab_Filters(self):
+        tabFilters = QWidget()
+        self.tabwidget.addTab(tabFilters, "Filters")
+
+        vboxlay = QVBoxLayout() #Items organised vertically
+        tabFilters.setLayout(vboxlay)
+
+        label0 = QLabel("Filters")
+        vboxlay.addWidget(label0)
+
+        #Optical flow denoise start
+        self.rbFlowDenoise= QRadioButton("Optical Flow Denoising")
+        self.rbFlowDenoise.setChecked(True)
+        vboxlay.addWidget(self.rbFlowDenoise)
+
+        grpBox1 = QGroupBox("") #Box, no title, radiobutton does it
+        vboxlay.addWidget(grpBox1)
+        vbox2 = QVBoxLayout()
+        grpBox1.setLayout(vbox2)
+        label1 = QLabel("Parameters")
+        vbox2.addWidget(label1)
+
+        #Grid for sigma z,y,x
+        qgrid2_layout = QGridLayout()
+        #qgrid2_layout.setAlignment(Qt.AlignmentFlag.AlignRight) # does not work
+        vbox2.addLayout(qgrid2_layout)
+        qgrid2_layout.addWidget(QLabel(""),0,0)
+        qgrid2_layout.addWidget(QLabel("z"),0,1, Qt.AlignmentFlag.AlignHCenter)
+        qgrid2_layout.addWidget(QLabel("x"),0,3, Qt.AlignmentFlag.AlignHCenter)
+        qgrid2_layout.addWidget(QLabel("y"),0,2, Qt.AlignmentFlag.AlignHCenter)
+        qgrid2_layout.addWidget(QLabel("sigma"),1,0, Qt.AlignmentFlag.AlignRight)
+        self.dspb_OF_sigma_z=QDoubleSpinBox()
+        self.dspb_OF_sigma_z.setMinimum(0.1)
+        self.dspb_OF_sigma_z.setMaximum(1000.0)
+        self.dspb_OF_sigma_z.setDecimals(2)
+        self.dspb_OF_sigma_z.setSingleStep(0.1)
+        self.dspb_OF_sigma_z.setValue(2.0)
+        qgrid2_layout.addWidget(self.dspb_OF_sigma_z,1,1)
+
+        self.dspb_OF_sigma_y=QDoubleSpinBox()
+        self.dspb_OF_sigma_y.setMinimum(0.1)
+        self.dspb_OF_sigma_y.setMaximum(1000.0)
+        self.dspb_OF_sigma_y.setDecimals(2)
+        self.dspb_OF_sigma_y.setSingleStep(0.1)
+        self.dspb_OF_sigma_y.setValue(2.0)
+        qgrid2_layout.addWidget(self.dspb_OF_sigma_y,1,2)
+
+        self.dspb_OF_sigma_x=QDoubleSpinBox()
+        self.dspb_OF_sigma_x.setMinimum(0.1)
+        self.dspb_OF_sigma_x.setMaximum(1000.0)
+        self.dspb_OF_sigma_x.setDecimals(2)
+        self.dspb_OF_sigma_x.setSingleStep(0.1)
+        self.dspb_OF_sigma_x.setValue(2.0)
+        qgrid2_layout.addWidget(self.dspb_OF_sigma_x,1,3)
+
+        qgrid2_layout.addWidget(QLabel("levels"),2,0, Qt.AlignmentFlag.AlignRight)
+        self.spb_OF_levels=QSpinBox()
+        self.spb_OF_levels.setMinimum(0)
+        self.spb_OF_levels.setMaximum(100)
+        self.spb_OF_levels.setValue(3)
+        self.spb_OF_levels.setSingleStep(1)
+        qgrid2_layout.addWidget(self.spb_OF_levels,2,1)
+
+        qgrid2_layout.addWidget(QLabel("winsize"),2,2, Qt.AlignmentFlag.AlignRight)
+        self.spb_OF_winsize=QSpinBox()
+        self.spb_OF_winsize.setMinimum(0)
+        self.spb_OF_winsize.setMaximum(100)
+        self.spb_OF_winsize.setValue(5)
+        self.spb_OF_winsize.setSingleStep(1)
+        qgrid2_layout.addWidget(self.spb_OF_winsize,2,3)
+
+        qgrid2_layout.addWidget(QLabel("p-processes"),3,0, Qt.AlignmentFlag.AlignRight)
+        self.spb_OF_maxproc=QSpinBox()
+        self.spb_OF_maxproc.setMinimum(0)
+        self.spb_OF_maxproc.setMaximum(100)
+        self.spb_OF_maxproc.setValue(4)
+        self.spb_OF_maxproc.setSingleStep(1)
+        qgrid2_layout.addWidget(self.spb_OF_maxproc,3,1)
+
+        qgrid2_layout.addWidget(QLabel("mode"),3,2, Qt.AlignmentFlag.AlignRight) 
+        self.cb_OF_procmode = QComboBox()
+        self.cb_OF_procmode.addItem("threaded")
+        self.cb_OF_procmode.addItem("multiproc")
+        self.cb_OF_procmode.addItem("sequential")
+        qgrid2_layout.addWidget(self.cb_OF_procmode,3,3)        
+
+        #Button to start the alignement
+        self.btn_Filters_Filter = QPushButton("Filter")
+        vboxlay.addWidget(self.btn_Filters_Filter)
+        self.btn_Filters_Filter.clicked.connect(self.btn_Filters_Filter_onclick) #Signal
+        #Optical flow denoise end
 
     def freqselector_high_valueChanged(self):
         #check value is not lower than lowvalue
@@ -584,6 +677,49 @@ class MainQWidget(QWidget):
         if not res is None:
             self.viewer.add_image(res, name="stack-align preview")
 
+    def btn_Filters_Filter_onclick(self):
+        #Read parameters and run OF
+        
+        if self.rbFlowDenoise.isChecked():
+            #Flow denoise filtering
+
+            with progress(range(3)) as pbr:
+                import flowdenoising.flowdenoising_mod as fdn
+
+                sigma_z = self.dspb_OF_sigma_z.value()
+                sigma_y = self.dspb_OF_sigma_y.value()
+                sigma_x = self.dspb_OF_sigma_x.value()
+                sigma0 = (sigma_z, sigma_y, sigma_x)
+
+                levels0=self.spb_OF_levels.value()
+                winsize0=self.spb_OF_winsize.value()
+                nprocesses0=self.spb_OF_maxproc.value()
+
+                process_mode0 = self.cb_OF_procmode.currentText()
+                
+                data0=np.asarray(self.w_setselect.get_active_image_selected_data()) #get active data
+
+
+                #Run the OF flow here
+                of_filter = fdn.cFlowDenoiser(
+                    sigma=sigma0,
+                    levels=levels0,
+                    winsize=winsize0,
+                    max_number_of_processes=nprocesses0,
+                    process_mode=process_mode0)
+                
+                
+                pbr.update(1)
+                
+                res0 = of_filter.runOpticalFlow(data0)
+
+                pbr.update(1)
+
+                #Add filtered image
+                if not res0 is None:
+                    self.viewer.add_image(res0,
+                                        name="flow denoised")
+                
 
     def get_UI_SA_parameters(self):
         sa_method = slice_alignment.ALIGNMENT_METHOD_DEFAULT
