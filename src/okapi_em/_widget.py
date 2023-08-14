@@ -689,21 +689,11 @@ class MainQWidget(QWidget):
                     import flowdenoising.flowdenoising_mod as fdn
                 except ModuleNotFoundError:
                     
-                    print("flowdenoising (rfi fork) package not available")
-                    print("Please install it by running the following command:")
-                    print("> pip install ""git+https://github.com/rosalindfranklininstitute/FlowDenoising.git"" ")
-                    
-                    #Show message box
-                    # from qtpy.QtWidgets import QMessageBox
-                    # QMessageBox.warning(self, "flowdenoising package not available",
-                    #                               "Please install it by running the following command:\n> pip install ""git+https://github.com/rosalindfranklininstitute/FlowDenoising.git""")
-
                     raise ModuleNotFoundError(
-                            """flowdenoising package not installed.
-                            Please install it by running the following command in the console:
+                            """flowdenoising (rfi fork) package not installed.
+                            Please install it by running the following command in the napari console:
                             > pip install git+https://github.com/rosalindfranklininstitute/FlowDenoising.git"""
                         )
-                    return
 
                 sigma_z = self.dspb_OF_sigma_z.value()
                 sigma_y = self.dspb_OF_sigma_y.value()
