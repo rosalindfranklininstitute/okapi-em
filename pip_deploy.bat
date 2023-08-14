@@ -30,7 +30,6 @@ rem updates
 pip install --upgrade twine --user
 
 @rem Uploads ( to PyPi by default). This will ask for credentials
-@rem python -m twine upload dist/*
 python -m twine upload dist/* --config-file .pypirc
 
 Echo Upload to PyPi completed
