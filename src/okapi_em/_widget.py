@@ -687,17 +687,22 @@ class MainQWidget(QWidget):
             with progress(range(3)) as pbr:
                 try:
                     import flowdenoising.flowdenoising_mod as fdn
-                except:
+                except ModuleNotFoundError:
                     
-                    print("flowdenoising package not available")
+                    print("flowdenoising (rfi fork) package not available")
                     print("Please install it by running the following command:")
-                    print("> pip install ""flowdenoising @ git+https://github.com/rosalindfranklininstitute/FlowDenoising.git"" ")
-                    #pip install "flowdenoising @ git+https://github.com/rosalindfranklininstitute/FlowDenoising.git"
+                    print("> pip install ""git+https://github.com/rosalindfranklininstitute/FlowDenoising.git"" ")
                     
                     #Show message box
-                    from qtpy.QtWidgets import QMessageBox
-                    QMessageBox.warning(self, "flowdenoising package not available",
-                                                  "Please install it by running the following command:\n> pip install ""flowdenoising @ git+https://github.com/rosalindfranklininstitute/FlowDenoising.git""")
+                    # from qtpy.QtWidgets import QMessageBox
+                    # QMessageBox.warning(self, "flowdenoising package not available",
+                    #                               "Please install it by running the following command:\n> pip install ""git+https://github.com/rosalindfranklininstitute/FlowDenoising.git""")
+
+                    raise ModuleNotFoundError(
+                            """flowdenoising package not installed.
+                            Please install it by running the following command in the console:
+                            > pip install git+https://github.com/rosalindfranklininstitute/FlowDenoising.git"""
+                        )
                     return
 
                 sigma_z = self.dspb_OF_sigma_z.value()
