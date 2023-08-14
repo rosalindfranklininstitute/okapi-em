@@ -664,7 +664,7 @@ class MainQWidget(QWidget):
         if order0 != 0: #z
             ValueError("Stack alignment only works along z direction. Please change visualisation to XY plane and ndisplay=2 for this button to work.")
 
-        data_2slice = curData[nslice:nslice+2, :,:]
+        data_2slice = np.asarray(curData[nslice:nslice+2, :,:])
 
         p0= self.get_UI_SA_parameters()
 
@@ -684,7 +684,14 @@ class MainQWidget(QWidget):
             #Flow denoise filtering
 
             with progress(range(3)) as pbr:
-                import flowdenoising.flowdenoising_mod as fdn
+                try:
+                    import flowdenoising.flowdenoising_mod as fdn
+                except:
+                    print("flowdenoising package not available")
+                    print("Please install it by running the following command:")
+                    print("> pip install ""flowdenoising @ git+https://github.com/rosalindfranklininstitute/FlowDenoising.git"" ")
+                    #pip install "flowdenoising @ git+https://github.com/rosalindfranklininstitute/FlowDenoising.git"
+                    return
 
                 sigma_z = self.dspb_OF_sigma_z.value()
                 sigma_y = self.dspb_OF_sigma_y.value()
