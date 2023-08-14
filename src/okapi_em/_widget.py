@@ -405,7 +405,7 @@ class MainQWidget(QWidget):
         
         print("doFFTDirFilterSlice()")
 
-        curDataSlice = self.w_setselect.get_active_image_selected_data_slice()
+        curDataSlice = np.asarray(self.w_setselect.get_active_image_selected_data_slice())
         if not curDataSlice is None:
 
             datares=None
@@ -418,7 +418,7 @@ class MainQWidget(QWidget):
                 datares = filters.fft_bandpass_filter_dirx_2D(curDataSlice,freq_low, freq_high)
 
             elif self.rbChafer.isChecked():
-                curLabelsSlice= self.w_setselectlabel.get_active_image_selected_data_slice()
+                curLabelsSlice= np.asarray(self.w_setselectlabel.get_active_image_selected_data_slice())
                 c_filter = chafer.cls_charge_artifact_suppression_filter(
                     self.chafer_widg_nlines.value(),
                     self.chafer_widg_maxlength.value(),
@@ -440,7 +440,7 @@ class MainQWidget(QWidget):
         #From current layer/data selected, apply the filter to the whole data
         
         print("doFFTDirFilterWhole()")
-        curData = self.w_setselect.get_active_image_selected_data()
+        curData = np.asarray(self.w_setselect.get_active_image_selected_data())
 
         if not curData is None:
             
@@ -466,7 +466,7 @@ class MainQWidget(QWidget):
                 #Dont use the Chafer's 3d method
                 #Use this engine to do slice by slice so that it can be monitored
 
-                curLabels= self.w_setselectlabel.get_active_image_selected_data()
+                curLabels= np.asarray(self.w_setselectlabel.get_active_image_selected_data())
 
                 c_filter = chafer.cls_charge_artifact_suppression_filter(
                     self.chafer_widg_nlines.value(),
@@ -511,7 +511,7 @@ class MainQWidget(QWidget):
         #Read tile size parameter and gets current image
         tilesize = self.mc_tilesize_selector.value()
 
-        data0 = self.w_setselect.get_active_image_selected_data_slice()
+        data0 = np.asarray(self.w_setselect.get_active_image_selected_data_slice())
 
         curDataSlice=data0
         if not curDataSlice is None:
@@ -588,7 +588,7 @@ class MainQWidget(QWidget):
 
         with progress(total=2,desc="FRC calculation in progress") as pbr:
 
-            data2d = self.w_setselect.get_active_image_selected_data_slice()
+            data2d = np.asarray(self.w_setselect.get_active_image_selected_data_slice())
 
             pbr.update(1)
 
@@ -616,7 +616,7 @@ class MainQWidget(QWidget):
         #Runs the FRC calculation for tiles
         with progress(total=2,desc="FRC tiled calculation in progress") as pbr:
 
-            data2d = self.w_setselect.get_active_image_selected_data_slice()
+            data2d = np.asarray(self.w_setselect.get_active_image_selected_data_slice())
 
             pbr.update(1)
 
@@ -677,6 +677,7 @@ class MainQWidget(QWidget):
         if not res is None:
             self.viewer.add_image(res, name="stack-align preview")
 
+
     def btn_Filters_Filter_onclick(self):
         #Read parameters and run OF
         
@@ -687,10 +688,16 @@ class MainQWidget(QWidget):
                 try:
                     import flowdenoising.flowdenoising_mod as fdn
                 except:
+                    
                     print("flowdenoising package not available")
                     print("Please install it by running the following command:")
                     print("> pip install ""flowdenoising @ git+https://github.com/rosalindfranklininstitute/FlowDenoising.git"" ")
                     #pip install "flowdenoising @ git+https://github.com/rosalindfranklininstitute/FlowDenoising.git"
+                    
+                    #Show message box
+                    from qtpy.QtWidgets import QMessageBox
+                    QMessageBox.warning(self, "flowdenoising package not available",
+                                                  "Please install it by running the following command:\n> pip install ""flowdenoising @ git+https://github.com/rosalindfranklininstitute/FlowDenoising.git""")
                     return
 
                 sigma_z = self.dspb_OF_sigma_z.value()
