@@ -1,5 +1,7 @@
 # okapi-em
 
+## Please note that this repository is not actively maintained
+
 https://github.com/rosalindfranklininstitute/okapi-em
 
 <!--
